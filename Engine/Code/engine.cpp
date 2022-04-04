@@ -187,6 +187,12 @@ void Init(App* app)
     // - programs (and retrieve uniform indices)
     // - textures
 
+    // Get OpenGL Information
+    app->glInfo.version = (const char*)glGetString(GL_VERSION);
+    app->glInfo.renderer = (const char*)glGetString(GL_RENDERER);
+    app->glInfo.vendor = (const char*)glGetString(GL_VENDOR);
+    app->glInfo.GLSLversion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
+
     app->mode = Mode_TexturedQuad;
 }
 
@@ -194,6 +200,12 @@ void Gui(App* app)
 {
     ImGui::Begin("Info");
     ImGui::Text("FPS: %f", 1.0f/app->deltaTime);
+
+    // OpenGL information
+    ImGui::Text("OpenGL version: %s", app->glInfo.version.c_str());
+    ImGui::Text("OpenGL renderer: %s", app->glInfo.renderer.c_str());
+    ImGui::Text("GPU vendor: %s", app->glInfo.vendor.c_str());
+    ImGui::Text("GLSL version: %s", app->glInfo.GLSLversion.c_str());
     ImGui::End();
 }
 
