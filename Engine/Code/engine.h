@@ -50,6 +50,12 @@ enum Mode
     Mode_Count
 };
 
+struct VertexV3V2
+{
+    vec3 pos;
+    vec2 uv;
+};
+
 struct App
 {
     // Loop
@@ -97,6 +103,8 @@ struct App
 };
 
 void Init(App* app);
+
+void InitQuad(App* app);
 
 void Gui(App* app);
 
