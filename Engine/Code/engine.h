@@ -112,7 +112,7 @@ struct GLInfo
     std::string GLSLversion;
 };
 
-enum Mode
+enum class Mode
 {
     Mode_TexturedQuad,
     Mode_TexturedMesh,
@@ -156,6 +156,8 @@ struct App
     u32 normalTexIdx;
     u32 magentaTexIdx;
 
+    u32 patrickTexIdx;
+
     // Mode
     Mode mode;
 
@@ -170,6 +172,11 @@ struct App
     // Location of the texture uniform in the textured quad shader
     GLuint programUniformTexture;
 
+    GLint maxUniformBufferSize;
+    GLint uniformBlockAlignment;
+    GLint texturedMeshProgram_uTexture;
+    GLuint bufferHandle;    
+
     // VAO object to link our screen filling quad with our textured quad shader
     GLuint vao;
 };
@@ -178,6 +185,8 @@ void Init(App* app);
 
 void InitQuad(App* app);
 
+void InitMesh(App* app);
+
 void Gui(App* app);
 
 void Update(App* app);
@@ -185,3 +194,5 @@ void Update(App* app);
 void Render(App* app);
 
 u32 LoadTexture2D(App* app, const char* filepath);
+
+GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
