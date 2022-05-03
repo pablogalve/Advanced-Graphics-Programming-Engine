@@ -235,11 +235,12 @@ void InitQuad(App* app)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->embeddedElements);
     glBindVertexArray(0);
 
-    app->texturedGeometryProgramIdx = LoadProgram(app, "shaders.glsl", "TEXTURED_GEOMETRY");
+    app->texturedMeshProgramIdx = LoadProgram(app, "shaders.glsl", "SHOW_TEXTURED_MESH");
+    Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
+    texturedMeshProgram.vertexInputLayout.attributes.push_back({ 0, 3 }); // position
+    texturedMeshProgram.vertexInputLayout.attributes.push_back({ 2, 2 }); // texCoord
 
-    Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
-
-    app->programUniformTexture = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture"); 
+    app->programUniformTexture = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
 
     if (app->programUniformTexture == GL_INVALID_VALUE || app->programUniformTexture == GL_INVALID_OPERATION)
     {
@@ -283,7 +284,7 @@ void Render(App* app)
 
             glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 
-            Program& programTexturedGeometry = app->programs[app->texturedGeometryProgramIdx];
+            Program& programTexturedGeometry = app->programs[app->texturedMeshProgramIdx];
             glUseProgram(programTexturedGeometry.handle);
             glBindVertexArray(app->vao);
 
