@@ -1,10 +1,9 @@
-
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include "engine.h"
 
-void ProcessAssimpMesh(const aiScene* scene, aiMesh *mesh, Mesh *myMesh, u32 baseMeshMaterialIndex, std::vector<u32>& submeshMaterialIndices)
+void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Mesh* myMesh, u32 baseMeshMaterialIndex, std::vector<u32>& submeshMaterialIndices)
 {
     std::vector<float> vertices;
     std::vector<u32> indices;
@@ -13,7 +12,7 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh *mesh, Mesh *myMesh, u32 bas
     bool hasTangentSpace = false;
 
     // process vertices
-    for(unsigned int i = 0; i < mesh->mNumVertices; i++)
+    for (unsigned int i = 0; i < mesh->mNumVertices; i++)
     {
         vertices.push_back(mesh->mVertices[i].x);
         vertices.push_back(mesh->mVertices[i].y);
@@ -22,14 +21,14 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh *mesh, Mesh *myMesh, u32 bas
         vertices.push_back(mesh->mNormals[i].y);
         vertices.push_back(mesh->mNormals[i].z);
 
-        if(mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
+        if (mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
         {
             hasTexCoords = true;
             vertices.push_back(mesh->mTextureCoords[0][i].x);
             vertices.push_back(mesh->mTextureCoords[0][i].y);
         }
 
-        if(mesh->mTangents != nullptr && mesh->mBitangents)
+        if (mesh->mTangents != nullptr && mesh->mBitangents)
         {
             hasTangentSpace = true;
             vertices.push_back(mesh->mTangents[i].x);
@@ -51,10 +50,10 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh *mesh, Mesh *myMesh, u32 bas
     }
 
     // process indices
-    for(unsigned int i = 0; i < mesh->mNumFaces; i++)
+    for (unsigned int i = 0; i < mesh->mNumFaces; i++)
     {
         aiFace face = mesh->mFaces[i];
-        for(unsigned int j = 0; j < face.mNumIndices; j++)
+        for (unsigned int j = 0; j < face.mNumIndices; j++)
         {
             indices.push_back(face.mIndices[j]);
         }
@@ -65,20 +64,20 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh *mesh, Mesh *myMesh, u32 bas
 
     // create the vertex format
     VertexBufferLayout vertexBufferLayout = {};
-    vertexBufferLayout.attributes.push_back( VertexBufferAttribute{ 0, 3, 0 } );                // 3D positions
-    vertexBufferLayout.attributes.push_back( VertexBufferAttribute{ 1, 3, 3*sizeof(float) } );  // tex coords
+    vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 0, 3, 0 });                // 3D positions
+    vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 1, 3, 3 * sizeof(float) });  // tex coords
     vertexBufferLayout.stride = 6 * sizeof(float);
     if (hasTexCoords)
     {
-        vertexBufferLayout.attributes.push_back( VertexBufferAttribute{ 2, 2, vertexBufferLayout.stride } );
+        vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 2, 2, vertexBufferLayout.stride });
         vertexBufferLayout.stride += 2 * sizeof(float);
     }
     if (hasTangentSpace)
     {
-        vertexBufferLayout.attributes.push_back( VertexBufferAttribute{ 3, 3, vertexBufferLayout.stride } );
+        vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 3, 3, vertexBufferLayout.stride });
         vertexBufferLayout.stride += 3 * sizeof(float);
 
-        vertexBufferLayout.attributes.push_back( VertexBufferAttribute{ 4, 3, vertexBufferLayout.stride } );
+        vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 4, 3, vertexBufferLayout.stride });
         vertexBufferLayout.stride += 3 * sizeof(float);
     }
 
@@ -87,10 +86,10 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh *mesh, Mesh *myMesh, u32 bas
     submesh.vertexBufferLayout = vertexBufferLayout;
     submesh.vertices.swap(vertices);
     submesh.indices.swap(indices);
-    myMesh->submeshes.push_back( submesh );
+    myMesh->submeshes.push_back(submesh);
 }
 
-void ProcessAssimpMaterial(App* app, aiMaterial *material, Material& myMaterial, String directory)
+void ProcessAssimpMaterial(App* app, aiMaterial* material, Material& myMaterial, String directory)
 {
     aiString name;
     aiColor3D diffuseColor;
@@ -148,17 +147,17 @@ void ProcessAssimpMaterial(App* app, aiMaterial *material, Material& myMaterial,
     //myMaterial.createNormalFromBump();
 }
 
-void ProcessAssimpNode(const aiScene* scene, aiNode *node, Mesh *myMesh, u32 baseMeshMaterialIndex, std::vector<u32>& submeshMaterialIndices)
+void ProcessAssimpNode(const aiScene* scene, aiNode* node, Mesh* myMesh, u32 baseMeshMaterialIndex, std::vector<u32>& submeshMaterialIndices)
 {
     // process all the node's meshes (if any)
-    for(unsigned int i = 0; i < node->mNumMeshes; i++)
+    for (unsigned int i = 0; i < node->mNumMeshes; i++)
     {
-        aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
+        aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
         ProcessAssimpMesh(scene, mesh, myMesh, baseMeshMaterialIndex, submeshMaterialIndices);
     }
 
     // then do the same for each of its children
-    for(unsigned int i = 0; i < node->mNumChildren; i++)
+    for (unsigned int i = 0; i < node->mNumChildren; i++)
     {
         ProcessAssimpNode(scene, node->mChildren[i], myMesh, baseMeshMaterialIndex, submeshMaterialIndices);
     }
@@ -167,14 +166,14 @@ void ProcessAssimpNode(const aiScene* scene, aiNode *node, Mesh *myMesh, u32 bas
 u32 LoadModel(App* app, const char* filename)
 {
     const aiScene* scene = aiImportFile(filename,
-                                        aiProcess_Triangulate           |
-                                        aiProcess_GenSmoothNormals      |
-                                        aiProcess_CalcTangentSpace      |
-                                        aiProcess_JoinIdenticalVertices |
-                                        aiProcess_PreTransformVertices  |
-                                        aiProcess_ImproveCacheLocality  |
-                                        aiProcess_OptimizeMeshes        |
-                                        aiProcess_SortByPType);
+        aiProcess_Triangulate |
+        aiProcess_GenSmoothNormals |
+        aiProcess_CalcTangentSpace |
+        aiProcess_JoinIdenticalVertices |
+        aiProcess_PreTransformVertices |
+        aiProcess_ImproveCacheLocality |
+        aiProcess_OptimizeMeshes |
+        aiProcess_SortByPType);
 
     if (!scene)
     {
@@ -212,7 +211,7 @@ u32 LoadModel(App* app, const char* filename)
     for (u32 i = 0; i < mesh.submeshes.size(); ++i)
     {
         vertexBufferSize += mesh.submeshes[i].vertices.size() * sizeof(float);
-        indexBufferSize  += mesh.submeshes[i].indices.size()  * sizeof(u32);
+        indexBufferSize += mesh.submeshes[i].indices.size() * sizeof(u32);
     }
 
     glGenBuffers(1, &mesh.vertexBufferHandle);
