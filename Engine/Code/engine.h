@@ -125,6 +125,16 @@ struct VertexV3V2
     vec2 uv;
 };
 
+struct Camera {
+    float aspectRatio;
+    float znear;
+    float zfar;
+    vec3 position;
+    vec3 target;
+    glm::mat4 projection; // Transform from view coordinates to clip coordinates
+    glm::mat4 view; // Transform from world coordinates to camera/eye/view coordinates
+};
+
 struct App
 {
     // Loop
@@ -139,6 +149,10 @@ struct App
     char openGlVersion[64];
 
     ivec2 displaySize;
+
+    Camera camera;
+    glm::mat4 world; // Coordinates of an object with respect to the world space
+    glm::mat4 worldViewProjection;
 
     std::vector<Texture>  textures;
     std::vector<Mesh>     meshes;
@@ -196,3 +210,7 @@ void Render(App* app);
 u32 LoadTexture2D(App* app, const char* filepath);
 
 GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
+
+glm::mat4 TransformScale(const vec3& scaleFactors);
+
+glm::mat4 TransformPositionScale(const vec3& pos, const vec3& scaleFactors);

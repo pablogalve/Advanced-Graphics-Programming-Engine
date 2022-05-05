@@ -249,6 +249,20 @@ void Init(App* app)
     app->glInfo.vendor = (const char*)glGetString(GL_VENDOR);
     app->glInfo.GLSLversion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
 
+    // Camera
+    app->camera.position    = vec3(1.0f, 1.0f, 1.0f);
+    app->camera.target      = vec3(0.0f, 0.0f, 0.0f);
+
+    app->camera.aspectRatio = (float)app->displaySize.x / (float)app->displaySize.y;
+    app->camera.znear       = 0.1f;
+    app->camera.zfar        = 1000.0f;
+    app->camera.projection  = glm::perspective(glm::radians(60.0f), app->camera.aspectRatio, app->camera.znear, app->camera.zfar);
+    app->camera.view        = glm::lookAt(app->camera.position, app->camera.target, vec3(0.0f, 1.0f, 0.0f));
+
+    app->world = TransformPositionScale(vec3(2.5f, 1.5f, -2.0f), vec3(0.45f));
+    app->worldViewProjection = app->camera.projection * app->camera.view * app->world;
+
+    // Mode
     app->mode = Mode::Mode_TexturedMesh;
 
     switch (app->mode)
@@ -456,4 +470,17 @@ void Render(App* app)
             break;
         }            
     }
+}
+
+glm::mat4 TransformScale(const vec3& scaleFactors)
+{
+    glm::mat4 transform = glm::scale(scaleFactors);
+    return transform;
+}
+
+glm::mat4 TransformPositionScale(const vec3& pos, const vec3& scaleFactors)
+{
+    glm::mat4 transform = glm::translate(pos);
+    transform = glm::scale(transform, scaleFactors);
+    return transform;
 }
