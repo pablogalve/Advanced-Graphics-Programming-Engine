@@ -12,6 +12,7 @@
 #include <stdexcept>
 
 #include "assimp_model_loading.h"
+#include "buffer_management.h"
 
 GLuint CreateProgramFromSource(String programSource, const char* shaderName)
 {
@@ -22,7 +23,7 @@ GLuint CreateProgramFromSource(String programSource, const char* shaderName)
 
     char versionString[] = "#version 430\n";
     char shaderNameDefine[128];
-    sprintf(shaderNameDefine, "#define %s\n", shaderName);
+    sprintf_s(shaderNameDefine, "#define %s\n", shaderName);
     char vertexShaderDefine[] = "#define VERTEX\n";
     char fragmentShaderDefine[] = "#define FRAGMENT\n";
 
@@ -181,11 +182,6 @@ u32 LoadTexture2D(App* app, const char* filepath)
     }
 }
 
-u32 Align(u32 value, u32 alignment)
-{
-    return (value + alignment - 1) & ~(alignment - 1);
-}
-
 GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
 {
     Submesh& submesh = mesh.submeshes[submeshIndex];
@@ -255,33 +251,38 @@ void Init(App* app)
     app->glInfo.GLSLversion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
 
     // Camera
-    app->camera.position    = vec3(1.0f, 1.0f, 1.0f);
-    app->camera.target      = vec3(0.0f, 0.0f, 0.0f);
+    {
+        app->camera = Camera(
+            glm::vec3(0.0f, 4.0f, 15.0f),          // Position
+            glm::vec3(-90.0f, 0.0f, 0.0f)         // Rotation
+        );
 
-    app->camera.aspectRatio = (float)app->displaySize.x / (float)app->displaySize.y;
-    app->camera.znear       = 0.1f;
-    app->camera.zfar        = 1000.0f;
-    app->camera.projection  = glm::perspective(glm::radians(60.0f), app->camera.aspectRatio, app->camera.znear, app->camera.zfar);
-    app->camera.view        = glm::lookAt(app->camera.position, app->camera.target, vec3(0.0f, 1.0f, 0.0f));
-
-    //app->worldViewProjectionMatrix = app->camera.projection * app->camera.view * app->worldMatrix;
+        app->camera.target = glm::vec3(glm::vec3(0.0f, 0.0f, 0.0f));
+        app->camera.aspectRatio = (float)app->displaySize.x / (float)app->displaySize.y;
+        app->camera.znear = 0.1f;
+        app->camera.zfar = 1000.0f;
+        app->camera.projection = glm::perspective(glm::radians(60.0f), app->camera.aspectRatio, app->camera.znear, app->camera.zfar);
+        app->camera.viewMatrix = glm::lookAt(app->camera.position, app->camera.target, glm::vec3(0.0f, 1.0f, 0.0f));
+    }    
 
     // Gameobjects
-    std::unique_ptr<Entity> entity1 = std::make_unique<Entity>();
-    std::unique_ptr<Entity> entity2 = std::make_unique<Entity>();
-    std::unique_ptr<Entity> entity3 = std::make_unique<Entity>();
+    {
+        std::unique_ptr<Entity> entity1 = std::make_unique<Entity>();
+        std::unique_ptr<Entity> entity2 = std::make_unique<Entity>();
+        std::unique_ptr<Entity> entity3 = std::make_unique<Entity>();
 
-    entity1->worldMatrix = TransformPositionScale(vec3(10.0f, 1.5f, 0.0f), vec3(0.45f));
-    entity2->worldMatrix = TransformPositionScale(vec3(2.5f, 1.5f, 0.0f), vec3(0.45f));
-    entity3->worldMatrix = TransformPositionScale(vec3(0.0f, 1.5f, -2.0f), vec3(0.45f));
+        entity1->worldMatrix = TransformPositionScale(glm::vec3(10.0f, 1.5f, 0.0f), glm::vec3(0.45f));
+        entity2->worldMatrix = TransformPositionScale(glm::vec3(2.5f, 1.5f, 0.0f), glm::vec3(0.45f));
+        entity3->worldMatrix = TransformPositionScale(glm::vec3(0.0f, 1.5f, -2.0f), glm::vec3(0.45f));
 
-    entity1->modelIndex = 0;
-    entity2->modelIndex = 0;
-    entity3->modelIndex = 0;
+        entity1->modelIndex = 0;
+        entity2->modelIndex = 0;
+        entity3->modelIndex = 0;
 
-    app->entities.push_back(std::move(entity1));
-    app->entities.push_back(std::move(entity2));
-    app->entities.push_back(std::move(entity3));    
+        app->entities.push_back(std::move(entity1));
+        app->entities.push_back(std::move(entity2));
+        app->entities.push_back(std::move(entity3));
+    }
 
     // Mode
     app->mode = Mode::Mode_TexturedMesh;
@@ -373,7 +374,7 @@ void InitMesh(App* app)
 {
     app->patrickTexIdx = LoadModel(app, "Patrick/Patrick.obj");
 
-    app->texturedMeshProgramIdx = LoadProgram(app, "shaders.glsl", "TEXTURED_GEOMETRY");
+    app->texturedMeshProgramIdx = LoadProgram(app, "shaders.glsl", "GEOMETRY_PASS_SHADER");
     Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
 
     int attributeCount = 0;
@@ -396,8 +397,8 @@ void InitMesh(App* app)
     glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
     glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBlockAlignment);
 
-    glGenBuffers(1, &app->bufferHandle);
-    glBindBuffer(GL_UNIFORM_BUFFER, app->bufferHandle);
+    glGenBuffers(1, &app->uniformBuffer.handle);
+    glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBuffer.handle);
     glBufferData(GL_UNIFORM_BUFFER, app->maxUniformBufferSize, NULL, GL_STREAM_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
@@ -412,17 +413,53 @@ void Gui(App* app)
     ImGui::Text("OpenGL renderer: %s", app->glInfo.renderer.c_str());
     ImGui::Text("GPU vendor: %s", app->glInfo.vendor.c_str());
     ImGui::Text("GLSL version: %s", app->glInfo.GLSLversion.c_str());
+
+    // Camera
+    ImGui::Separator();
+    ImGui::Text("Camera");
+
+    ImGui::Text("Position");
+    ImGui::PushItemWidth(100);
+    ImGui::DragFloat("X", &app->camera.position.x);
+    ImGui::SameLine();
+    ImGui::DragFloat("Y", &app->camera.position.y);
+    ImGui::SameLine();
+    ImGui::DragFloat("Z", &app->camera.position.z);
+    ImGui::PopItemWidth();
+
+    ImGui::Text("Rotation");
+    ImGui::PushItemWidth(100);
+    ImGui::DragFloat("Yaw", &app->camera.yaw);
+    ImGui::SameLine();
+    ImGui::DragFloat("Pitch", &app->camera.pitch);
+    ImGui::PopItemWidth();
+
     ImGui::End();      
 }
 
 void Update(App* app)
 {
     // You can handle app->input keyboard/mouse here
+    app->camera.Update(app);
 
-    glBindBuffer(GL_UNIFORM_BUFFER, app->bufferHandle);
+    // Global parameters
+    MapBuffer(app->globalBuffer, GL_WRITE_ONLY);
+    app->globalParamsOffset = app->globalBuffer.head;
+
+    //PushVec3(app->globalBuffer, app->camera.position);
+
+    app->globalParamsSize = app->globalBuffer.head - app->globalParamsOffset;
+
+    UnmapBuffer(app->globalBuffer);
+
+    // Update uniform
+    glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBuffer.handle);
     u8* bufferData = (u8*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
     u32 bufferHead = 0;
 
+
+
+    // Entities
     for (int i = 0; i < app->entities.size(); ++i)
     {
         bufferHead = Align(bufferHead, app->uniformBlockAlignment);
@@ -432,7 +469,7 @@ void Update(App* app)
         memcpy(bufferData + bufferHead, glm::value_ptr(app->entities[i]->worldMatrix), sizeof(glm::mat4));
         bufferHead += sizeof(glm::mat4);
 
-        glm::mat4 worldViewProjectionMatrix = app->camera.projection * app->camera.view * app->entities[i]->worldMatrix;
+        glm::mat4 worldViewProjectionMatrix = app->camera.projection * app->camera.viewMatrix * app->entities[i]->worldMatrix;
         memcpy(bufferData + bufferHead, glm::value_ptr(worldViewProjectionMatrix), sizeof(glm::mat4));
         bufferHead += sizeof(glm::mat4);
 
@@ -445,6 +482,12 @@ void Update(App* app)
 
 void Render(App* app)
 {
+    // Clear the screen (also ImGui...)
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+    glEnable(GL_DEPTH_TEST);
+
     switch (app->mode)
     {
         case Mode::Mode_TexturedQuad:
@@ -478,7 +521,7 @@ void Render(App* app)
             Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
             glUseProgram(texturedMeshProgram.handle);
 
-            //glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->bufferHandle, app->globalParamsOffset, app->globalParamsSize);
+            glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->uniformBuffer.handle, app->globalParamsOffset, app->globalParamsSize);
 
             if (app->models.size() == 0) {
                 throw std::invalid_argument("There are no models. Check if there are models in the directory and if LoadModel() is called.");
@@ -488,7 +531,7 @@ void Render(App* app)
             {
                 Model& model = app->models[app->entities[i]->modelIndex];
                 Mesh& mesh = app->meshes[model.meshIdx];
-                glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), app->bufferHandle, app->entities[i]->localParamsOffset, app->entities[i]->localParamsSize);
+                glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), app->uniformBuffer.handle, app->entities[i]->localParamsOffset, app->entities[i]->localParamsSize);
 
                 for (u32 i = 0; i < mesh.submeshes.size(); ++i)
                 {
@@ -521,13 +564,13 @@ void Render(App* app)
     }
 }
 
-glm::mat4 TransformScale(const vec3& scaleFactors)
+glm::mat4 TransformScale(const glm::vec3& scaleFactors)
 {
     glm::mat4 transform = glm::scale(scaleFactors);
     return transform;
 }
 
-glm::mat4 TransformPositionScale(const vec3& pos, const vec3& scaleFactors)
+glm::mat4 TransformPositionScale(const glm::vec3& pos, const glm::vec3& scaleFactors)
 {
     glm::mat4 transform = glm::translate(pos);
     transform = glm::scale(transform, scaleFactors);

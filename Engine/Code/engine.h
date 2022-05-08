@@ -6,23 +6,28 @@
 
 #define BINDING(b) b
 
-#include "platform.h"
 #include <glad/glad.h>
 #include <memory>
 
-typedef glm::vec2  vec2;
-typedef glm::vec3  vec3;
-typedef glm::vec4  vec4;
-typedef glm::ivec2 ivec2;
-typedef glm::ivec3 ivec3;
-typedef glm::ivec4 ivec4;
+#include "platform.h"
+#include "Camera.h"
+#include "buffer_management.h"
+
+struct Buffer
+{
+    GLuint  handle;
+    GLenum  type;
+    u32     size;
+    u32     head;
+    void* data;
+};
 
 struct Image
 {
-    void* pixels;
-    ivec2 size;
-    i32   nchannels;
-    i32   stride;
+    void*      pixels;
+    glm::ivec2 size;
+    i32        nchannels;
+    i32        stride;
 };
 
 struct Texture
@@ -34,8 +39,8 @@ struct Texture
 struct Material
 {
     std::string name;
-    vec3        albedo;
-    vec3        emissive;
+    glm::vec3   albedo;
+    glm::vec3   emissive;
     f32         smoothness;
     u32         albedoTextureIdx;
     u32         emissiveTextureIdx;
@@ -124,23 +129,13 @@ enum class Mode
 
 struct VertexV3V2
 {
-    vec3 pos;
-    vec2 uv;
-};
-
-struct Camera {
-    float aspectRatio;
-    float znear;
-    float zfar;
-    vec3 position;
-    vec3 target;
-    glm::mat4 projection; // Transform from view coordinates to clip coordinates
-    glm::mat4 view;       // Transform from world coordinates to camera/eye/view coordinates
+    glm::vec3 pos;
+    glm::vec2 uv;
 };
 
 struct Entity
 {
-    glm::mat4 worldMatrix;               // Coordinates of an object with respect to the world space
+    glm::mat4 worldMatrix;  // Coordinates of an object with respect to the world space
     u32       modelIndex;
     u32       localParamsOffset;
     u32       localParamsSize;
@@ -159,11 +154,10 @@ struct App
     char gpuName[64];
     char openGlVersion[64];
 
-    ivec2 displaySize;
+    glm::ivec2 displaySize;
 
     Camera camera;    
     std::vector <std::unique_ptr<Entity>> entities;
-    GLuint bufferHandle;
 
     std::vector<Texture>  textures;
     std::vector<Mesh>     meshes;
@@ -203,6 +197,14 @@ struct App
 
     // VAO object to link our screen filling quad with our textured quad shader
     GLuint vao;
+
+    // Local params
+    Buffer uniformBuffer;    
+
+    // Global params
+    Buffer  globalBuffer;
+    u32     globalParamsOffset;
+    u32     globalParamsSize;
 };
 
 void Init(App* app);
@@ -219,10 +221,8 @@ void Render(App* app);
 
 u32 LoadTexture2D(App* app, const char* filepath);
 
-u32 Align(u32 value, u32 alignment);
-
 GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
 
-glm::mat4 TransformScale(const vec3& scaleFactors);
+glm::mat4 TransformScale(const glm::vec3& scaleFactors);
 
-glm::mat4 TransformPositionScale(const vec3& pos, const vec3& scaleFactors);
+glm::mat4 TransformPositionScale(const glm::vec3& pos, const glm::vec3& scaleFactors);
