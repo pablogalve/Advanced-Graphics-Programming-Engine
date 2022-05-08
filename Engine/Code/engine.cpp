@@ -181,6 +181,11 @@ u32 LoadTexture2D(App* app, const char* filepath)
     }
 }
 
+u32 Align(u32 value, u32 alignment)
+{
+    return (value + alignment - 1) & ~(alignment - 1);
+}
+
 GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
 {
     Submesh& submesh = mesh.submeshes[submeshIndex];
@@ -259,8 +264,24 @@ void Init(App* app)
     app->camera.projection  = glm::perspective(glm::radians(60.0f), app->camera.aspectRatio, app->camera.znear, app->camera.zfar);
     app->camera.view        = glm::lookAt(app->camera.position, app->camera.target, vec3(0.0f, 1.0f, 0.0f));
 
-    app->world = TransformPositionScale(vec3(2.5f, 1.5f, -2.0f), vec3(0.45f));
-    app->worldViewProjection = app->camera.projection * app->camera.view * app->world;
+    //app->worldViewProjectionMatrix = app->camera.projection * app->camera.view * app->worldMatrix;
+
+    // Gameobjects
+    std::unique_ptr<Entity> entity1 = std::make_unique<Entity>();
+    std::unique_ptr<Entity> entity2 = std::make_unique<Entity>();
+    std::unique_ptr<Entity> entity3 = std::make_unique<Entity>();
+
+    entity1->worldMatrix = TransformPositionScale(vec3(10.0f, 1.5f, 0.0f), vec3(0.45f));
+    entity2->worldMatrix = TransformPositionScale(vec3(2.5f, 1.5f, 0.0f), vec3(0.45f));
+    entity3->worldMatrix = TransformPositionScale(vec3(0.0f, 1.5f, -2.0f), vec3(0.45f));
+
+    entity1->modelIndex = 0;
+    entity2->modelIndex = 0;
+    entity3->modelIndex = 0;
+
+    app->entities.push_back(std::move(entity1));
+    app->entities.push_back(std::move(entity2));
+    app->entities.push_back(std::move(entity3));    
 
     // Mode
     app->mode = Mode::Mode_TexturedMesh;
@@ -397,6 +418,29 @@ void Gui(App* app)
 void Update(App* app)
 {
     // You can handle app->input keyboard/mouse here
+
+    glBindBuffer(GL_UNIFORM_BUFFER, app->bufferHandle);
+    u8* bufferData = (u8*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+    u32 bufferHead = 0;
+
+    for (int i = 0; i < app->entities.size(); ++i)
+    {
+        bufferHead = Align(bufferHead, app->uniformBlockAlignment);
+
+        app->entities[i]->localParamsOffset = bufferHead;
+
+        memcpy(bufferData + bufferHead, glm::value_ptr(app->entities[i]->worldMatrix), sizeof(glm::mat4));
+        bufferHead += sizeof(glm::mat4);
+
+        glm::mat4 worldViewProjectionMatrix = app->camera.projection * app->camera.view * app->entities[i]->worldMatrix;
+        memcpy(bufferData + bufferHead, glm::value_ptr(worldViewProjectionMatrix), sizeof(glm::mat4));
+        bufferHead += sizeof(glm::mat4);
+
+        app->entities[i]->localParamsSize = bufferHead - app->entities[i]->localParamsOffset;
+    }
+
+    glUnmapBuffer(GL_UNIFORM_BUFFER);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void Render(App* app)
@@ -434,28 +478,33 @@ void Render(App* app)
             Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
             glUseProgram(texturedMeshProgram.handle);
 
+            //glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->bufferHandle, app->globalParamsOffset, app->globalParamsSize);
+
             if (app->models.size() == 0) {
                 throw std::invalid_argument("There are no models. Check if there are models in the directory and if LoadModel() is called.");
-            }                
+            }
 
-            //Model& model = app->models[app->model];
-            Model& model = app->models[0];
-            Mesh& mesh = app->meshes[model.meshIdx];
-
-            for (u32 i = 0; i < mesh.submeshes.size(); ++i)
+            for (int i = 0; i < app->entities.size(); ++i)
             {
-                GLuint vao = FindVAO(mesh, i, texturedMeshProgram);
-                glBindVertexArray(vao);
+                Model& model = app->models[app->entities[i]->modelIndex];
+                Mesh& mesh = app->meshes[model.meshIdx];
+                glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), app->bufferHandle, app->entities[i]->localParamsOffset, app->entities[i]->localParamsSize);
 
-                u32 subMeshMaterialIdx = model.materialIdx[i];
-                Material& submeshMaterial = app->materials[subMeshMaterialIdx];
+                for (u32 i = 0; i < mesh.submeshes.size(); ++i)
+                {
+                    GLuint vao = FindVAO(mesh, i, texturedMeshProgram);
+                    glBindVertexArray(vao);
 
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
-                glUniform1i(app->texturedMeshProgram_uTexture, 0);
+                    u32 subMeshMaterialIdx = model.materialIdx[i];
+                    Material& submeshMaterial = app->materials[subMeshMaterialIdx];
 
-                Submesh& submesh = mesh.submeshes[i];
-                glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
+                    glUniform1i(app->texturedMeshProgram_uTexture, 0);
+
+                    Submesh& submesh = mesh.submeshes[i];
+                    glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+                }
             }
 
             break;

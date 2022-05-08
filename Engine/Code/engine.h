@@ -4,8 +4,11 @@
 
 #pragma once
 
+#define BINDING(b) b
+
 #include "platform.h"
 #include <glad/glad.h>
+#include <memory>
 
 typedef glm::vec2  vec2;
 typedef glm::vec3  vec3;
@@ -132,7 +135,15 @@ struct Camera {
     vec3 position;
     vec3 target;
     glm::mat4 projection; // Transform from view coordinates to clip coordinates
-    glm::mat4 view; // Transform from world coordinates to camera/eye/view coordinates
+    glm::mat4 view;       // Transform from world coordinates to camera/eye/view coordinates
+};
+
+struct Entity
+{
+    glm::mat4 worldMatrix;               // Coordinates of an object with respect to the world space
+    u32       modelIndex;
+    u32       localParamsOffset;
+    u32       localParamsSize;
 };
 
 struct App
@@ -150,9 +161,9 @@ struct App
 
     ivec2 displaySize;
 
-    Camera camera;
-    glm::mat4 world; // Coordinates of an object with respect to the world space
-    glm::mat4 worldViewProjection;
+    Camera camera;    
+    std::vector <std::unique_ptr<Entity>> entities;
+    GLuint bufferHandle;
 
     std::vector<Texture>  textures;
     std::vector<Mesh>     meshes;
@@ -189,7 +200,6 @@ struct App
     GLint maxUniformBufferSize;
     GLint uniformBlockAlignment;
     GLint texturedMeshProgram_uTexture;
-    GLuint bufferHandle;    
 
     // VAO object to link our screen filling quad with our textured quad shader
     GLuint vao;
@@ -208,6 +218,8 @@ void Update(App* app);
 void Render(App* app);
 
 u32 LoadTexture2D(App* app, const char* filepath);
+
+u32 Align(u32 value, u32 alignment);
 
 GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
 
