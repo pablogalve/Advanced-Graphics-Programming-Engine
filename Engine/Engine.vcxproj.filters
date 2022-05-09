@@ -54,10 +54,13 @@
     <ClCompile Include="Code\assimp_model_loading.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
-    <ClCompile Include="Code\Camera.cpp">
+    <ClCompile Include="Code\camera.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
     <ClCompile Include="Code\buffer_management.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\entity.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
   </ItemGroup>
@@ -104,10 +107,13 @@
     <ClInclude Include="Code\assimp_model_loading.h">
       <Filter>Engine</Filter>
     </ClInclude>
-    <ClInclude Include="Code\Camera.h">
+    <ClInclude Include="Code\camera.h">
       <Filter>Engine</Filter>
     </ClInclude>
     <ClInclude Include="Code\buffer_management.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\entity.h">
       <Filter>Engine</Filter>
     </ClInclude>
   </ItemGroup>

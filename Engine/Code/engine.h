@@ -10,8 +10,9 @@
 #include <memory>
 
 #include "platform.h"
-#include "Camera.h"
+#include "camera.h"
 #include "buffer_management.h"
+#include "entity.h"
 
 struct Buffer
 {
@@ -133,14 +134,6 @@ struct VertexV3V2
     glm::vec2 uv;
 };
 
-struct Entity
-{
-    glm::mat4 worldMatrix;  // Coordinates of an object with respect to the world space
-    u32       modelIndex;
-    u32       localParamsOffset;
-    u32       localParamsSize;
-};
-
 struct App
 {
     // Loop
@@ -176,6 +169,7 @@ struct App
     u32 magentaTexIdx;
 
     u32 patrickTexIdx;
+    u32 plane;
 
     // Mode
     Mode mode;
@@ -211,7 +205,9 @@ void Init(App* app);
 
 void InitQuad(App* app);
 
-void InitMesh(App* app);
+void InitPatrickModel(App* app);
+
+void InitPlane(App* app);
 
 void Gui(App* app);
 
@@ -223,6 +219,3 @@ u32 LoadTexture2D(App* app, const char* filepath);
 
 GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
 
-glm::mat4 TransformScale(const glm::vec3& scaleFactors);
-
-glm::mat4 TransformPositionScale(const glm::vec3& pos, const glm::vec3& scaleFactors);

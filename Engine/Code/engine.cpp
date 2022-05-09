@@ -265,23 +265,39 @@ void Init(App* app)
         app->camera.viewMatrix = glm::lookAt(app->camera.position, app->camera.target, glm::vec3(0.0f, 1.0f, 0.0f));
     }    
 
-    // Gameobjects
+    // Gameobjects - Entities
     {
-        std::unique_ptr<Entity> entity1 = std::make_unique<Entity>();
-        std::unique_ptr<Entity> entity2 = std::make_unique<Entity>();
-        std::unique_ptr<Entity> entity3 = std::make_unique<Entity>();
+        std::unique_ptr<Entity> plane = std::make_unique<Entity>(
+            glm::vec3(10.0f, 1.5f, 0.0f), // Position
+            glm::vec3(1.0f),             // Scale factor
+            0,                            // Model index
+            EntityType::PLANE             // Type
+            );
 
-        entity1->worldMatrix = TransformPositionScale(glm::vec3(10.0f, 1.5f, 0.0f), glm::vec3(0.45f));
-        entity2->worldMatrix = TransformPositionScale(glm::vec3(2.5f, 1.5f, 0.0f), glm::vec3(0.45f));
-        entity3->worldMatrix = TransformPositionScale(glm::vec3(0.0f, 1.5f, -2.0f), glm::vec3(0.45f));
+        std::unique_ptr<Entity> patrick1 = std::make_unique<Entity>(
+            glm::vec3(10.0f, 1.5f, 0.0f), // Position
+            glm::vec3(1.0f),             // Scale factor
+            0,                            // Model index
+            EntityType::PATRICK           // Type
+            );
 
-        entity1->modelIndex = 0;
-        entity2->modelIndex = 0;
-        entity3->modelIndex = 0;
+        std::unique_ptr<Entity> patrick2 = std::make_unique<Entity>(
+            glm::vec3(2.5f, 1.5f, 0.0f),  // Position
+            glm::vec3(1.0f),             // Scale factor
+            0,                            // Model index
+            EntityType::PATRICK           // Type
+            );
 
-        app->entities.push_back(std::move(entity1));
-        app->entities.push_back(std::move(entity2));
-        app->entities.push_back(std::move(entity3));
+        std::unique_ptr<Entity> patrick3 = std::make_unique<Entity>(
+            glm::vec3(0.0f, 1.5f, -2.0f), // Position
+            glm::vec3(1.0f),             // Scale factor
+            0,                            // Model index
+            EntityType::PATRICK           // Type
+            );
+
+        app->entities.push_back(std::move(patrick1));
+        app->entities.push_back(std::move(patrick2));
+        app->entities.push_back(std::move(patrick3));
     }
 
     // Mode
@@ -297,7 +313,8 @@ void Init(App* app)
         }
         case Mode::Mode_TexturedMesh:
         {
-            InitMesh(app);
+            InitPatrickModel(app);
+            InitPlane(app);
 
             break;
         }
@@ -317,15 +334,15 @@ void InitQuad(App* app)
 {
     // Init verts and indices to draw quad
     VertexV3V2 vertices[] = {
-        {glm::vec3(-0.5,-0.5,0.0),glm::vec2(0.0,0.0)},
-        {glm::vec3(0.5,-0.5,0.0),glm::vec2(1.0,0.0) },
-        {glm::vec3(0.5,0.5,0.0),glm::vec2(1.0,1.0) },
-        {glm::vec3(-0.5,0.5,0.0),glm::vec2(0.0,1.0) },
+        {glm::vec3( -0.5, -0.5,  0.0), glm::vec2( 0.0,  0.0) }, // bottom-left
+        {glm::vec3(  0.5, -0.5,  0.0), glm::vec2( 1.0,  0.0) }, // bottom-right
+        {glm::vec3(  0.5,  0.5,  0.0), glm::vec2( 1.0,  1.0) }, // top-right
+        {glm::vec3( -0.5,  0.5,  0.0), glm::vec2( 0.0,  1.0) }, // top-left
     };
-
+    
     u16 indices[] = {
-        0,1,2,
-        0,2,3
+        0, 1, 2,
+        0, 2, 3
     };
 
     // Geometry
@@ -370,7 +387,7 @@ void InitQuad(App* app)
     app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");
 }
 
-void InitMesh(App* app)
+void InitPatrickModel(App* app)
 {
     app->patrickTexIdx = LoadModel(app, "Patrick/Patrick.obj");
 
@@ -401,6 +418,23 @@ void InitMesh(App* app)
     glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBuffer.handle);
     glBufferData(GL_UNIFORM_BUFFER, app->maxUniformBufferSize, NULL, GL_STREAM_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+void InitPlane(App* app)
+{
+    std::vector<float> vertices = {
+        -1.0, -1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, // bottom-left
+         1.0, -1.0, 0.0, 0.0, 0.0, -1.0, 1.0, 0.0, // bottom-right
+         1.0,  1.0, 0.0, 0.0, 0.0, -1.0, 1.0, 1.0, // top-right
+        -1.0,  1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0  // top-left
+    };
+
+    u16 indices[] = {
+        0, 1, 2,
+        0, 2, 3
+    };
+
+
 }
 
 void Gui(App* app)
@@ -564,15 +598,3 @@ void Render(App* app)
     }
 }
 
-glm::mat4 TransformScale(const glm::vec3& scaleFactors)
-{
-    glm::mat4 transform = glm::scale(scaleFactors);
-    return transform;
-}
-
-glm::mat4 TransformPositionScale(const glm::vec3& pos, const glm::vec3& scaleFactors)
-{
-    glm::mat4 transform = glm::translate(pos);
-    transform = glm::scale(transform, scaleFactors);
-    return transform;
-}

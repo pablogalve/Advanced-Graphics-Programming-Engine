@@ -21,8 +21,9 @@
   <ItemGroup>
     <ClCompile Include="Code\assimp_model_loading.cpp" />
     <ClCompile Include="Code\buffer_management.cpp" />
-    <ClCompile Include="Code\Camera.cpp" />
+    <ClCompile Include="Code\camera.cpp" />
     <ClCompile Include="Code\engine.cpp" />
+    <ClCompile Include="Code\entity.cpp" />
     <ClCompile Include="Code\platform.cpp" />
     <ClCompile Include="ThirdParty\glad\include\glad\glad.c" />
     <ClCompile Include="ThirdParty\imgui-docking\imgui.cpp" />
@@ -37,8 +38,9 @@
   <ItemGroup>
     <ClInclude Include="Code\assimp_model_loading.h" />
     <ClInclude Include="Code\buffer_management.h" />
-    <ClInclude Include="Code\Camera.h" />
+    <ClInclude Include="Code\camera.h" />
     <ClInclude Include="Code\engine.h" />
+    <ClInclude Include="Code\entity.h" />
     <ClInclude Include="Code\platform.h" />
     <ClInclude Include="ThirdParty\glad\include\glad\glad.h" />
     <ClInclude Include="ThirdParty\glad\include\glad\khrplatform.h" />
