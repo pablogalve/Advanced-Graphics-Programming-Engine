@@ -298,6 +298,10 @@ void Init(App* app)
         app->entities.push_back(std::move(patrick1));
         app->entities.push_back(std::move(patrick2));
         app->entities.push_back(std::move(patrick3));
+
+        std::shared_ptr<Light> light1 = std::make_unique<Light>();
+
+        app->lights.push_back(light1);
     }
 
     // Mode
@@ -314,7 +318,7 @@ void Init(App* app)
         case Mode::Mode_TexturedMesh:
         {
             InitPatrickModel(app);
-            InitPlane(app);
+            InitPlane(app); 
 
             break;
         }
@@ -391,7 +395,7 @@ void InitPatrickModel(App* app)
 {
     app->patrickTexIdx = LoadModel(app, "Patrick/Patrick.obj");
 
-    app->texturedMeshProgramIdx = LoadProgram(app, "shaders.glsl", "GEOMETRY_PASS_SHADER");
+    app->texturedMeshProgramIdx = LoadProgram(app, "geometry_pass_shader.glsl", "GEOMETRY_PASS_SHADER");
     Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
 
     int attributeCount = 0;
@@ -420,21 +424,19 @@ void InitPatrickModel(App* app)
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-void InitPlane(App* app)
+void InitPlane(App* app) // TODO: Not finished
 {
-    std::vector<float> vertices = {
-        -1.0, -1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, // bottom-left
-         1.0, -1.0, 0.0, 0.0, 0.0, -1.0, 1.0, 0.0, // bottom-right
-         1.0,  1.0, 0.0, 0.0, 0.0, -1.0, 1.0, 1.0, // top-right
-        -1.0,  1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0  // top-left
+    VertexV3V2 vertices[] = {
+        {glm::vec3(-0.5, -0.5,  0.0), glm::vec2(0.0,  0.0) }, // bottom-left
+        {glm::vec3(0.5, -0.5,  0.0), glm::vec2(1.0,  0.0) }, // bottom-right
+        {glm::vec3(0.5,  0.5,  0.0), glm::vec2(1.0,  1.0) }, // top-right
+        {glm::vec3(-0.5,  0.5,  0.0), glm::vec2(0.0,  1.0) }, // top-left
     };
 
     u16 indices[] = {
         0, 1, 2,
         0, 2, 3
     };
-
-
 }
 
 void Gui(App* app)
@@ -480,21 +482,32 @@ void Update(App* app)
     app->camera.Update(app);
 
     // Global parameters
-    MapBuffer(app->globalBuffer, GL_WRITE_ONLY);
+    //MapBuffer(app->globalBuffer, GL_WRITE_ONLY);
     app->globalParamsOffset = app->globalBuffer.head;
 
     //PushVec3(app->globalBuffer, app->camera.position);
+    //PushUInt(app->globalBuffer, app->lights.size());
 
-    app->globalParamsSize = app->globalBuffer.head - app->globalParamsOffset;
+    //app->globalParamsSize = app->globalBuffer.head - app->globalParamsOffset;
 
-    UnmapBuffer(app->globalBuffer);
+    //UnmapBuffer(app->globalBuffer);
 
     // Update uniform
     glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBuffer.handle);
     u8* bufferData = (u8*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
     u32 bufferHead = 0;
 
+    // Lights
+    for (int i = 0; i < app->lights.size(); ++i)
+    {
+        AlignHead(app->globalBuffer, sizeof(glm::vec4));
 
+        Light& light = *app->lights[i];
+        /*PushUInt(app->globalBuffer, light.type);
+        PushVec3(app->globalBuffer, light.color);
+        PushVec3(app->globalBuffer, light.direction);
+        PushVec3(app->globalBuffer, light.position);*/
+    }
 
     // Entities
     for (int i = 0; i < app->entities.size(); ++i)
@@ -600,4 +613,3 @@ void Render(App* app)
         }            
     }
 }
-

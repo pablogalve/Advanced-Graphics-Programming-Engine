@@ -118,7 +118,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="WorkingDir\shaders.glsl">
+    <None Include="WorkingDir\geometry_pass_shader.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="WorkingDir\textured_geometry_shader.glsl">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

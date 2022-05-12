@@ -134,6 +134,20 @@ struct VertexV3V2
     glm::vec2 uv;
 };
 
+enum LightType
+{
+    LightType_Directional,
+    LightType_Point
+};
+
+struct Light
+{
+    LightType type;
+    glm::vec3 color;
+    glm::vec3 direction;
+    glm::vec3 position;
+};
+
 struct App
 {
     // Loop
@@ -151,6 +165,7 @@ struct App
 
     Camera camera;    
     std::vector <std::unique_ptr<Entity>> entities;
+    std::vector <std::shared_ptr<Light>> lights;
 
     std::vector<Texture>  textures;
     std::vector<Mesh>     meshes;
@@ -160,6 +175,7 @@ struct App
 
     // program indices
     u32 texturedMeshProgramIdx;
+    u32 texturedPlaneProgramIdx;
     
     // texture indices
     u32 diceTexIdx;

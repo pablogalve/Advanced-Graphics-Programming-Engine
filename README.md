@@ -1,2 +1,2 @@
-# Advanced Graphics Programming Engine
+# Graphics Engine
  
