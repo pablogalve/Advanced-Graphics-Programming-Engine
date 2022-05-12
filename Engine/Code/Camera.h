@@ -11,6 +11,12 @@ struct Camera {
     void Update(App* app);
     void RecalculateViewMatrix();
 
+    // Camera movement
+    float speed = 1.0f;
+    glm::vec3 forward;
+    glm::vec3 right;
+    glm::vec3 up;
+
     float aspectRatio;
     float znear;
     float zfar;

@@ -452,6 +452,9 @@ void Gui(App* app)
     ImGui::Separator();
     ImGui::Text("Camera");
 
+    ImGui::Text("Movement speed");
+    ImGui::DragFloat("X", &app->camera.speed);
+
     ImGui::Text("Position");
     ImGui::PushItemWidth(100);
     ImGui::DragFloat("X", &app->camera.position.x);
