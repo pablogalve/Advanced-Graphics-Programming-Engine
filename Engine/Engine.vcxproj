@@ -57,6 +57,7 @@
   <ItemGroup>
     <None Include="WorkingDir\geometry_pass_shader.glsl" />
     <None Include="WorkingDir\textured_geometry_shader.glsl" />
+    <None Include="WorkingDir\plane_shader.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

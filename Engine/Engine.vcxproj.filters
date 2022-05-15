@@ -124,5 +124,8 @@
     <None Include="WorkingDir\textured_geometry_shader.glsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="WorkingDir\plane_shader.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -124,6 +124,7 @@ struct GLInfo
 enum class Mode
 {
     Mode_TexturedQuad,
+    Mode_Plane,
     Mode_TexturedMesh,
     Mode_Count
 };
@@ -146,6 +147,13 @@ struct Light
     glm::vec3 color;
     glm::vec3 direction;
     glm::vec3 position;
+};
+
+struct Plane
+{
+    u32 programID;
+    unsigned int shaderProgram;
+    unsigned int VAO;
 };
 
 struct App
@@ -175,7 +183,6 @@ struct App
 
     // program indices
     u32 texturedMeshProgramIdx;
-    u32 texturedPlaneProgramIdx;
     
     // texture indices
     u32 diceTexIdx;
@@ -185,7 +192,7 @@ struct App
     u32 magentaTexIdx;
 
     u32 patrickTexIdx;
-    u32 plane;
+    Plane plane;
 
     // Mode
     Mode mode;

@@ -13,6 +13,7 @@
 
 #include "assimp_model_loading.h"
 #include "buffer_management.h"
+#include <iostream>
 
 GLuint CreateProgramFromSource(String programSource, const char* shaderName)
 {
@@ -295,6 +296,7 @@ void Init(App* app)
             EntityType::PATRICK           // Type
             );
 
+        app->entities.push_back(std::move(plane));
         app->entities.push_back(std::move(patrick1));
         app->entities.push_back(std::move(patrick2));
         app->entities.push_back(std::move(patrick3));
@@ -305,7 +307,7 @@ void Init(App* app)
     }
 
     // Mode
-    app->mode = Mode::Mode_TexturedMesh;
+    app->mode = Mode::Mode_Plane;
 
     switch (app->mode)
     {
@@ -319,6 +321,12 @@ void Init(App* app)
         {
             InitPatrickModel(app);
             InitPlane(app); 
+
+            break;
+        }
+        case Mode::Mode_Plane:
+        {
+            InitPlane(app);
 
             break;
         }
@@ -393,7 +401,7 @@ void InitQuad(App* app)
 
 void InitPatrickModel(App* app)
 {
-    app->patrickTexIdx = LoadModel(app, "Patrick/Patrick.obj");
+    app->patrickTexIdx = LoadModel(app, "Models/Patrick/Patrick.obj");
 
     app->texturedMeshProgramIdx = LoadProgram(app, "geometry_pass_shader.glsl", "GEOMETRY_PASS_SHADER");
     Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
@@ -424,19 +432,102 @@ void InitPatrickModel(App* app)
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-void InitPlane(App* app) // TODO: Not finished
+void InitPlane(App* app)
 {
-    VertexV3V2 vertices[] = {
-        {glm::vec3(-0.5, -0.5,  0.0), glm::vec2(0.0,  0.0) }, // bottom-left
-        {glm::vec3(0.5, -0.5,  0.0), glm::vec2(1.0,  0.0) }, // bottom-right
-        {glm::vec3(0.5,  0.5,  0.0), glm::vec2(1.0,  1.0) }, // top-right
-        {glm::vec3(-0.5,  0.5,  0.0), glm::vec2(0.0,  1.0) }, // top-left
-    };
+    const char* vertexShaderSource = "#version 330 core\n"
+        "layout (location = 0) in vec3 aPos;\n"
+        "void main()\n"
+        "{\n"
+        "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+        "}\0";
 
-    u16 indices[] = {
-        0, 1, 2,
-        0, 2, 3
+    const char* fragmentShaderSource = "#version 330 core\n"
+        "out vec4 FragColor;\n"
+        "void main()\n"
+        "{\n"
+        "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+        "}\0";
+
+    float vertices[] = {
+        0.5f,  0.5f, 0.0f,  // top right
+        0.5f, -0.5f, 0.0f,  // bottom right
+        -0.5f, -0.5f, 0.0f,  // bottom left
+        -0.5f,  0.5f, 0.0f   // top left
+    };   
+
+    unsigned int indices[] = {
+        0, 1, 3,    // first triangle
+        1, 2, 3     // second triangle
     };
+    
+    // vertex shader
+    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glCompileShader(vertexShader);
+    // check for shader compile errors
+    int success;
+    char infoLog[512];
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+    // fragment shader
+    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glCompileShader(fragmentShader);
+    // check for shader compile errors
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+    // link shaders
+    unsigned int shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+    // check for linking errors
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+    }
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    // set up vertex data (and buffer(s)) and configure vertex attributes
+    // ------------------------------------------------------------------
+
+
+    unsigned int VBO, VAO, EBO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
+    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
+    glBindVertexArray(0);
+
+    // Save values in plane struct
+    app->plane.VAO = VAO;    
+    app->plane.shaderProgram = shaderProgram;
 }
 
 void Gui(App* app)
@@ -483,7 +574,7 @@ void Update(App* app)
 
     // Global parameters
     //MapBuffer(app->globalBuffer, GL_WRITE_ONLY);
-    app->globalParamsOffset = app->globalBuffer.head;
+    //app->globalParamsOffset = app->globalBuffer.head;
 
     //PushVec3(app->globalBuffer, app->camera.position);
     //PushUInt(app->globalBuffer, app->lights.size());
@@ -493,24 +584,24 @@ void Update(App* app)
     //UnmapBuffer(app->globalBuffer);
 
     // Update uniform
-    glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBuffer.handle);
+    /*glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBuffer.handle);
     u8* bufferData = (u8*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-    u32 bufferHead = 0;
+    u32 bufferHead = 0;*/
 
     // Lights
-    for (int i = 0; i < app->lights.size(); ++i)
+    /*for (int i = 0; i < app->lights.size(); ++i)
     {
         AlignHead(app->globalBuffer, sizeof(glm::vec4));
 
-        Light& light = *app->lights[i];
+        Light& light = *app->lights[i];*/
         /*PushUInt(app->globalBuffer, light.type);
         PushVec3(app->globalBuffer, light.color);
         PushVec3(app->globalBuffer, light.direction);
         PushVec3(app->globalBuffer, light.position);*/
-    }
+    //}
 
     // Entities
-    for (int i = 0; i < app->entities.size(); ++i)
+    /*for (int i = 0; i < app->entities.size(); ++i)
     {
         bufferHead = Align(bufferHead, app->uniformBlockAlignment);
 
@@ -527,16 +618,16 @@ void Update(App* app)
     }
 
     glUnmapBuffer(GL_UNIFORM_BUFFER);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);*/
 }
 
 void Render(App* app)
 {
     // Clear the screen (also ImGui...)
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    /*glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, app->displaySize.x, app->displaySize.y);
-    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);*/
 
     switch (app->mode)
     {
@@ -599,6 +690,17 @@ void Render(App* app)
                     glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
                 }
             }
+
+            break;
+        }
+        case Mode::Mode_Plane:
+        {
+            glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            glUseProgram(app->plane.shaderProgram);
+            glBindVertexArray(app->plane.VAO);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
             break;
         }
