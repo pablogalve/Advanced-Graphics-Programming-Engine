@@ -238,13 +238,6 @@ GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
 
 void Init(App* app)
 {
-    // TODO: Initialize your resources here!
-    // - vertex buffers
-    // - element/index buffers
-    // - vaos
-    // - programs (and retrieve uniform indices)
-    // - textures
-
     // Get OpenGL Information
     app->glInfo.version = (const char*)glGetString(GL_VERSION);
     app->glInfo.renderer = (const char*)glGetString(GL_RENDERER);
@@ -266,32 +259,32 @@ void Init(App* app)
         app->camera.viewMatrix = glm::lookAt(app->camera.position, app->camera.target, glm::vec3(0.0f, 1.0f, 0.0f));
     }    
 
-    // Gameobjects - Entities
+    // Gameobjects - Entities and lights
     {
         std::unique_ptr<Entity> plane = std::make_unique<Entity>(
             glm::vec3(10.0f, 1.5f, 0.0f), // Position
-            glm::vec3(1.0f),             // Scale factor
+            glm::vec3(1.0f),              // Scale factor
             0,                            // Model index
             EntityType::PLANE             // Type
             );
 
         std::unique_ptr<Entity> patrick1 = std::make_unique<Entity>(
             glm::vec3(10.0f, 1.5f, 0.0f), // Position
-            glm::vec3(1.0f),             // Scale factor
+            glm::vec3(1.0f),              // Scale factor
             0,                            // Model index
             EntityType::PATRICK           // Type
             );
 
         std::unique_ptr<Entity> patrick2 = std::make_unique<Entity>(
             glm::vec3(2.5f, 1.5f, 0.0f),  // Position
-            glm::vec3(1.0f),             // Scale factor
+            glm::vec3(1.0f),              // Scale factor
             0,                            // Model index
             EntityType::PATRICK           // Type
             );
 
         std::unique_ptr<Entity> patrick3 = std::make_unique<Entity>(
             glm::vec3(0.0f, 1.5f, -2.0f), // Position
-            glm::vec3(1.0f),             // Scale factor
+            glm::vec3(1.0f),              // Scale factor
             0,                            // Model index
             EntityType::PATRICK           // Type
             );
@@ -301,13 +294,28 @@ void Init(App* app)
         app->entities.push_back(std::move(patrick2));
         app->entities.push_back(std::move(patrick3));
 
-        std::shared_ptr<Light> light1 = std::make_unique<Light>();
+        std::shared_ptr<Light> light1 = std::make_unique<Light>(
+            LightType::LightType_Directional,
+            glm::vec3(0.5f, 0.5f, 0.5f), // Color
+            glm::vec3(0.0f, -0.5, 0.5f), // Direction
+            glm::vec3(0.1f, 20.0f, 0.1f)  // Position
+            );
 
         app->lights.push_back(light1);
     }
 
+    // Local parameters
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
+    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBufferAlignment);
+    app->uniformBuffer = CreateConstantBuffer(app->maxUniformBufferSize);
+
+    // Global parameters
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxGlobalParamsBufferSize);
+    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->globalParamsAlignment);
+    app->globalBuffer = CreateConstantBuffer(app->maxGlobalParamsBufferSize);
+
     // Mode
-    app->mode = Mode::Mode_Plane;
+    app->mode = Mode::Mode_TexturedMesh;
 
     switch (app->mode)
     {
@@ -424,7 +432,7 @@ void InitPatrickModel(App* app)
 
     // Uniforms initialization
     glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
-    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBlockAlignment);
+    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBufferAlignment);
 
     glGenBuffers(1, &app->uniformBuffer.handle);
     glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBuffer.handle);
@@ -564,6 +572,19 @@ void Gui(App* app)
     ImGui::DragFloat("Pitch", &app->camera.pitch);
     ImGui::PopItemWidth();
 
+    // Render target
+    ImGui::Separator();
+    ImGui::Text("Render Targets");
+    const char* items[] = { "Albedo", "Normals", "Position", "Depth"};
+    static int item = 0;
+    if (ImGui::Combo("Render Target", &item, items, IM_ARRAYSIZE(items)))
+    {
+        app->renderTarget = (RenderTargetType)item;
+    }
+
+    ImGui::Separator();
+    ImGui::Checkbox("Enable debug groups", &app->enableDebugGroup);
+
     ImGui::End();      
 }
 
@@ -573,62 +594,51 @@ void Update(App* app)
     app->camera.Update(app);
 
     // Global parameters
-    //MapBuffer(app->globalBuffer, GL_WRITE_ONLY);
-    //app->globalParamsOffset = app->globalBuffer.head;
+    MapBuffer(app->globalBuffer, GL_WRITE_ONLY);
+    app->globalParamsOffset = app->globalBuffer.head;
 
-    //PushVec3(app->globalBuffer, app->camera.position);
-    //PushUInt(app->globalBuffer, app->lights.size());
-
-    //app->globalParamsSize = app->globalBuffer.head - app->globalParamsOffset;
-
-    //UnmapBuffer(app->globalBuffer);
-
-    // Update uniform
-    /*glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBuffer.handle);
-    u8* bufferData = (u8*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-    u32 bufferHead = 0;*/
+    PushVec3(app->globalBuffer, app->camera.position);
+    PushUInt(app->globalBuffer, app->lights.size());
 
     // Lights
-    /*for (int i = 0; i < app->lights.size(); ++i)
+    for (int i = 0; i < app->lights.size(); ++i)
     {
         AlignHead(app->globalBuffer, sizeof(glm::vec4));
 
-        Light& light = *app->lights[i];*/
-        /*PushUInt(app->globalBuffer, light.type);
+        Light& light = *app->lights[i];
+        PushUInt(app->globalBuffer, light.type);
         PushVec3(app->globalBuffer, light.color);
         PushVec3(app->globalBuffer, light.direction);
-        PushVec3(app->globalBuffer, light.position);*/
-    //}
-
-    // Entities
-    /*for (int i = 0; i < app->entities.size(); ++i)
-    {
-        bufferHead = Align(bufferHead, app->uniformBlockAlignment);
-
-        app->entities[i]->localParamsOffset = bufferHead;
-
-        memcpy(bufferData + bufferHead, glm::value_ptr(app->entities[i]->worldMatrix), sizeof(glm::mat4));
-        bufferHead += sizeof(glm::mat4);
-
-        glm::mat4 worldViewProjectionMatrix = app->camera.projection * app->camera.viewMatrix * app->entities[i]->worldMatrix;
-        memcpy(bufferData + bufferHead, glm::value_ptr(worldViewProjectionMatrix), sizeof(glm::mat4));
-        bufferHead += sizeof(glm::mat4);
-
-        app->entities[i]->localParamsSize = bufferHead - app->entities[i]->localParamsOffset;
+        PushVec3(app->globalBuffer, light.position);
     }
 
-    glUnmapBuffer(GL_UNIFORM_BUFFER);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);*/
+    app->globalParamsSize = app->globalBuffer.head - app->globalParamsOffset;
+
+    UnmapBuffer(app->globalBuffer);
+
+
+    MapBuffer(app->uniformBuffer, GL_WRITE_ONLY);
+
+    // Entities
+    for (int i = 0; i < app->entities.size(); ++i)
+    {
+        //app->uniformBuffer.head = Align(app->uniformBuffer.head, app->uniformBlockAlignment);
+        AlignHead(app->uniformBuffer, app->uniformBufferAlignment);
+
+        glm::mat4 world = app->entities[i]->worldMatrix;
+        glm::mat4 worldViewProjection = app->camera.projection * app->camera.viewMatrix * world;
+
+        app->entities[i]->localParamsOffset = app->uniformBuffer.head;
+        PushMat4(app->uniformBuffer, world);
+        PushMat4(app->uniformBuffer, worldViewProjection);
+        app->entities[i]->localParamsSize = app->uniformBuffer.head - app->entities[i]->localParamsOffset;
+    }
+
+    UnmapBuffer(app->uniformBuffer);
 }
 
 void Render(App* app)
 {
-    // Clear the screen (also ImGui...)
-    /*glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glViewport(0, 0, app->displaySize.x, app->displaySize.y);
-    glEnable(GL_DEPTH_TEST);*/
-
     switch (app->mode)
     {
         case Mode::Mode_TexturedQuad:
@@ -659,6 +669,14 @@ void Render(App* app)
         }
         case Mode::Mode_TexturedMesh:
         {
+            // Clear the screen (also ImGui...)
+            {
+                glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+                glEnable(GL_DEPTH_TEST);
+            }            
+
             Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
             glUseProgram(texturedMeshProgram.handle);
 
@@ -670,6 +688,11 @@ void Render(App* app)
 
             for (int i = 0; i < app->entities.size(); ++i)
             {
+                if (app->enableDebugGroup)
+                {
+                    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Shaded model");
+                }
+
                 Model& model = app->models[app->entities[i]->modelIndex];
                 Mesh& mesh = app->meshes[model.meshIdx];
                 glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), app->uniformBuffer.handle, app->entities[i]->localParamsOffset, app->entities[i]->localParamsSize);
@@ -688,6 +711,11 @@ void Render(App* app)
 
                     Submesh& submesh = mesh.submeshes[i];
                     glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+                }
+
+                if (app->enableDebugGroup)
+                {
+                    glPopDebugGroup();
                 }
             }
 
@@ -712,6 +740,6 @@ void Render(App* app)
         default:
         {
             break;
-        }            
+        }
     }
 }

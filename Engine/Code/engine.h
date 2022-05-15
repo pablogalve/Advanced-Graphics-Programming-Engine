@@ -20,7 +20,7 @@ struct Buffer
     GLenum  type;
     u32     size;
     u32     head;
-    void* data;
+    void*   data;
 };
 
 struct Image
@@ -143,6 +143,10 @@ enum LightType
 
 struct Light
 {
+    Light() {};
+    Light(LightType type, glm::vec3 color, glm::vec3 direction, glm::vec3 position) : 
+        type(type), color(color), direction(direction), position(position) {};
+
     LightType type;
     glm::vec3 color;
     glm::vec3 direction;
@@ -154,6 +158,14 @@ struct Plane
     u32 programID;
     unsigned int shaderProgram;
     unsigned int VAO;
+};
+
+enum RenderTargetType
+{
+    ALBEDO,
+    NORMALS,
+    POSITION,
+    DEPTH
 };
 
 struct App
@@ -208,20 +220,25 @@ struct App
     // Location of the texture uniform in the textured quad shader
     GLuint programUniformTexture;
 
-    GLint maxUniformBufferSize;
-    GLint uniformBlockAlignment;
-    GLint texturedMeshProgram_uTexture;
-
     // VAO object to link our screen filling quad with our textured quad shader
     GLuint vao;
 
     // Local params
     Buffer uniformBuffer;    
+    GLint maxUniformBufferSize;
+    GLint uniformBufferAlignment;
+    GLint texturedMeshProgram_uTexture;
 
     // Global params
     Buffer  globalBuffer;
+    GLint   maxGlobalParamsBufferSize;
+    GLint   globalParamsAlignment;
     u32     globalParamsOffset;
     u32     globalParamsSize;
+
+    bool enableDebugGroup = true;
+
+    RenderTargetType renderTarget = RenderTargetType::ALBEDO;
 };
 
 void Init(App* app);
