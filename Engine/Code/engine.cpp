@@ -236,7 +236,7 @@ void Init(App* app)
     app->glInfo.renderer = (const char*)glGetString(GL_RENDERER);
     app->glInfo.vendor = (const char*)glGetString(GL_VENDOR);
     app->glInfo.GLSLversion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
-
+       
     // Program 
     app->texturedGeometryProgramIdx = LoadProgram(app, "textured_geometry_shader.glsl", "TEXTURED_GEOMETRY");
     Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
@@ -334,10 +334,16 @@ void Init(App* app)
         app->camera.projection = glm::perspective(glm::radians(60.0f), app->camera.aspectRatio, app->camera.znear, app->camera.zfar);
         app->camera.viewMatrix = glm::lookAt(app->camera.position, app->camera.target, glm::vec3(0.0f, 1.0f, 0.0f));
     }
+        
+    // Init models
+    InitPatrickModel(app);
+    app->planeId = LoadModel(app, "Models/Wall/plane.obj");
+    app->sphereId = LoadModel(app, "Models/Sphere/sphere.obj");
 
     // Program
     app->texturedMeshProgramIdx = LoadProgram(app, "show_textured_mesh.glsl", "SHOW_TEXTURED_MESH");
     Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
+
 
     // Attributes Program 
     int attributeCount;
@@ -355,11 +361,6 @@ void Init(App* app)
         GLint attributeLocation = glGetAttribLocation(texturedMeshProgram.handle, attributeName);
         texturedMeshProgram.vertexInputLayout.attributes.push_back({ (u8)attributeLocation,(u8)attributeSize });
     }
-
-    // Init models
-    InitPatrickModel(app);
-    app->planeId = LoadModel(app, "Models/Wall/plane.obj");
-    app->sphereId = LoadModel(app, "Models/Sphere/sphere.obj");
 
     // Gameobjects - Entities and lights
     {
@@ -395,7 +396,7 @@ void Init(App* app)
         app->entities.push_back(std::move(patrick1));
         app->entities.push_back(std::move(patrick2));
         app->entities.push_back(std::move(patrick3));
-
+               
         const int nr_lights = 3;
 
         for (int i = 0; i < nr_lights; i++)

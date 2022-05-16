@@ -52,7 +52,7 @@ void GBuffer::ReserveMemory()
 	glGenTextures(1, &IDs[NORMALS]);
 	glGenTextures(1, &IDs[ALBEDO]);
 	glGenTextures(1, &IDs[DEPTH]);
-
+	
 	glGenFramebuffers(1, &IDs[FBO]);
 	glGenRenderbuffers(1, &IDs[ZBO]);
 }
@@ -64,7 +64,7 @@ void GBuffer::FreeMemory()
 	glDeleteTextures(1, &IDs[NORMALS]);
 	glDeleteTextures(1, &IDs[ALBEDO]);
 	glDeleteTextures(1, &IDs[DEPTH]);
-
+	
 	glDeleteFramebuffers(1, &IDs[FBO]);
 	glDeleteRenderbuffers(1, &IDs[ZBO]);
 }
@@ -181,7 +181,6 @@ void ShadingBuffer::UpdateFBO()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	//glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, IDs[FBO]);
