@@ -13,6 +13,7 @@
 #include "camera.h"
 #include "buffer_management.h"
 #include "entity.h"
+#include "framebuffer.h"
 
 struct Buffer
 {
@@ -121,14 +122,6 @@ struct GLInfo
     std::string GLSLversion;
 };
 
-enum class Mode
-{
-    Mode_TexturedQuad,
-    Mode_Plane,
-    Mode_TexturedMesh,
-    Mode_Count
-};
-
 struct VertexV3V2
 {
     glm::vec3 pos;
@@ -144,13 +137,14 @@ enum LightType
 struct Light
 {
     Light() {};
-    Light(LightType type, glm::vec3 color, glm::vec3 direction, glm::vec3 position) : 
-        type(type), color(color), direction(direction), position(position) {};
+    Light(LightType type, glm::vec3 color, glm::vec3 direction, glm::vec3 position, unsigned int intensity) : 
+        type(type), color(color), direction(direction), position(position), intensity(intensity) {};
 
     LightType type;
     glm::vec3 color;
     glm::vec3 direction;
     glm::vec3 position;
+    unsigned int intensity; // From 0 to 100
 };
 
 struct Plane
@@ -158,14 +152,6 @@ struct Plane
     u32 programID;
     unsigned int shaderProgram;
     unsigned int VAO;
-};
-
-enum RenderTargetType
-{
-    ALBEDO,
-    NORMALS,
-    POSITION,
-    DEPTH
 };
 
 struct App
@@ -185,7 +171,7 @@ struct App
 
     Camera camera;    
     std::vector <std::unique_ptr<Entity>> entities;
-    std::vector <std::shared_ptr<Light>> lights;
+    std::vector<Light> lights;
 
     std::vector<Texture>  textures;
     std::vector<Mesh>     meshes;
@@ -194,7 +180,11 @@ struct App
     std::vector<Program>  programs;
 
     // program indices
+    u32 texturedGeometryProgramIdx;
     u32 texturedMeshProgramIdx;
+    u32 geometryPassShaderId;
+    u32 shadingPassShaderId;
+    u32 lightsShaderId;
     
     // texture indices
     u32 diceTexIdx;
@@ -204,21 +194,23 @@ struct App
     u32 magentaTexIdx;
 
     u32 patrickTexIdx;
-    Plane plane;
+    u32 planeId;
+    u32 sphereId;
 
-    // Mode
-    Mode mode;
+    Plane plane;
 
     // OpenGL info
     GLInfo glInfo;
 
-    // Embedded geometry (in-editor simple meshes such as
-    // a screen filling quad, a cube, a sphere...)
-    GLuint embeddedVertices;
-    GLuint embeddedElements;
-
     // Location of the texture uniform in the textured quad shader
     GLuint programUniformTexture;
+    GLuint programGPassUniformTexture;
+    GLuint programShadingPassUniformTexturePosition;
+    GLuint programShadingPassUniformTextureNormals;
+    GLuint programShadingPassUniformTextureAlbedo;
+    GLuint programShadingPassUniformTextureDepth;
+    GLuint programLightsUniformColor;
+    GLuint programLightsUniformWorldMatrix;
 
     // VAO object to link our screen filling quad with our textured quad shader
     GLuint vao;
@@ -238,16 +230,16 @@ struct App
 
     bool enableDebugGroup = true;
 
-    RenderTargetType renderTarget = RenderTargetType::ALBEDO;
+    // FBO
+    GBuffer gFbo;
+    ShadingBuffer shadingFbo;
+
+    RenderTargetType renderTarget = RenderTargetType::DEFAULT;
 };
 
 void Init(App* app);
 
-void InitQuad(App* app);
-
 void InitPatrickModel(App* app);
-
-void InitPlane(App* app);
 
 void Gui(App* app);
 
@@ -255,7 +247,8 @@ void Update(App* app);
 
 void Render(App* app);
 
+void RenderQuad(App* app);
+
 u32 LoadTexture2D(App* app, const char* filepath);
 
 GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
-

@@ -243,6 +243,89 @@ void Init(App* app)
     app->glInfo.renderer = (const char*)glGetString(GL_RENDERER);
     app->glInfo.vendor = (const char*)glGetString(GL_VENDOR);
     app->glInfo.GLSLversion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
+       
+    // Program 
+    app->texturedGeometryProgramIdx = LoadProgram(app, "textured_geometry_shader.glsl", "TEXTURED_GEOMETRY");
+    Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
+    app->programUniformTexture = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
+
+    app->geometryPassShaderId = LoadProgram(app, "geometry_pass_shader.glsl", "GEOMETRY_PASS_SHADER");
+    Program& geometryPassShader = app->programs[app->geometryPassShaderId];
+    app->programGPassUniformTexture = glGetUniformLocation(geometryPassShader.handle, "uTexture");
+
+    {
+        int attributeCount;
+        glGetProgramiv(geometryPassShader.handle, GL_ACTIVE_ATTRIBUTES, &attributeCount);
+
+        GLchar attributeName[64];
+        GLsizei attributeNameLength;
+        GLint attributeSize;
+        GLenum attributeType;
+
+        for (int i = 0; i < attributeCount; ++i)
+        {
+            glGetActiveAttrib(geometryPassShader.handle, i, 64, &attributeNameLength, &attributeSize, &attributeType, attributeName);
+
+            GLint attributeLocation = glGetAttribLocation(geometryPassShader.handle, attributeName);
+            geometryPassShader.vertexInputLayout.attributes.push_back({ (u8)attributeLocation,(u8)attributeSize });
+        }
+    }
+
+    // Program
+    app->shadingPassShaderId = LoadProgram(app, "shading_pass_shader.glsl", "SHADING_PASS_SHADER");
+    Program& shadingPassShader = app->programs[app->shadingPassShaderId];
+    app->programShadingPassUniformTexturePosition = glGetUniformLocation(shadingPassShader.handle, "gPosition");
+    app->programShadingPassUniformTextureNormals = glGetUniformLocation(shadingPassShader.handle, "gNormal");
+    app->programShadingPassUniformTextureAlbedo = glGetUniformLocation(shadingPassShader.handle, "gAlbedoSpec");
+    app->programShadingPassUniformTextureDepth = glGetUniformLocation(shadingPassShader.handle, "gDepth");
+
+    {
+        int attributeCount;
+        glGetProgramiv(shadingPassShader.handle, GL_ACTIVE_ATTRIBUTES, &attributeCount);
+
+        GLchar attributeName[64];
+        GLsizei attributeNameLength;
+        GLint attributeSize;
+        GLenum attributeType;
+
+        for (int i = 0; i < attributeCount; ++i)
+        {
+            glGetActiveAttrib(shadingPassShader.handle, i, 64, &attributeNameLength, &attributeSize, &attributeType, attributeName);
+
+            GLint attributeLocation = glGetAttribLocation(shadingPassShader.handle, attributeName);
+            shadingPassShader.vertexInputLayout.attributes.push_back({ (u8)attributeLocation,(u8)attributeSize });
+        }
+    }
+
+    app->lightsShaderId = LoadProgram(app, "lights_shader.glsl", "LIGHTS_SHADER");
+    Program& lightsShader = app->programs[app->lightsShaderId];
+    app->programLightsUniformColor = glGetUniformLocation(lightsShader.handle, "lightColor");
+    app->programLightsUniformWorldMatrix = glGetUniformLocation(lightsShader.handle, "uWorldViewProjectionMatrix");
+
+    {
+        int attributeCount;
+        glGetProgramiv(lightsShader.handle, GL_ACTIVE_ATTRIBUTES, &attributeCount);
+
+        GLchar attributeName[64];
+        GLsizei attributeNameLength;
+        GLint attributeSize;
+        GLenum attributeType;
+
+        for (int i = 0; i < attributeCount; ++i)
+        {
+            glGetActiveAttrib(lightsShader.handle, i, 64, &attributeNameLength, &attributeSize, &attributeType, attributeName);
+
+            GLint attributeLocation = glGetAttribLocation(lightsShader.handle, attributeName);
+            lightsShader.vertexInputLayout.attributes.push_back({ (u8)attributeLocation,(u8)attributeSize });
+        }
+    }
+
+    // Textures 
+    app->diceTexIdx = LoadTexture2D(app, "dice.png");
+    app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
+    app->blackTexIdx = LoadTexture2D(app, "color_black.png");
+    app->normalTexIdx = LoadTexture2D(app, "color_normal.png");
+    app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");
 
     // Camera
     {
@@ -259,15 +342,30 @@ void Init(App* app)
         app->camera.viewMatrix = glm::lookAt(app->camera.position, app->camera.target, glm::vec3(0.0f, 1.0f, 0.0f));
     }    
 
+    // Program
+    app->texturedMeshProgramIdx = LoadProgram(app, "show_textured_mesh.glsl", "SHOW_TEXTURED_MESH");
+    Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
+
+
+    // Attributes Program 
+    int attributeCount;
+    glGetProgramiv(texturedMeshProgram.handle, GL_ACTIVE_ATTRIBUTES, &attributeCount);
+
+    GLchar attributeName[64];
+    GLsizei attributeNameLength;
+    GLint attributeSize;
+    GLenum attributeType;
+
+    for (int i = 0; i < attributeCount; ++i)
+    {
+        glGetActiveAttrib(texturedMeshProgram.handle, i, 64, &attributeNameLength, &attributeSize, &attributeType, attributeName);
+
+        GLint attributeLocation = glGetAttribLocation(texturedMeshProgram.handle, attributeName);
+        texturedMeshProgram.vertexInputLayout.attributes.push_back({ (u8)attributeLocation,(u8)attributeSize });
+    }
+
     // Gameobjects - Entities and lights
     {
-        std::unique_ptr<Entity> plane = std::make_unique<Entity>(
-            glm::vec3(10.0f, 1.5f, 0.0f), // Position
-            glm::vec3(1.0f),              // Scale factor
-            0,                            // Model index
-            EntityType::PLANE             // Type
-            );
-
         std::unique_ptr<Entity> patrick1 = std::make_unique<Entity>(
             glm::vec3(10.0f, 1.5f, 0.0f), // Position
             glm::vec3(1.0f),              // Scale factor
@@ -289,19 +387,43 @@ void Init(App* app)
             EntityType::PATRICK           // Type
             );
 
-        app->entities.push_back(std::move(plane));
         app->entities.push_back(std::move(patrick1));
         app->entities.push_back(std::move(patrick2));
         app->entities.push_back(std::move(patrick3));
+               
+        const int nr_lights = 3;
 
-        std::shared_ptr<Light> light1 = std::make_unique<Light>(
-            LightType::LightType_Directional,
-            glm::vec3(0.5f, 0.5f, 0.5f), // Color
-            glm::vec3(0.0f, -0.5, 0.5f), // Direction
-            glm::vec3(0.1f, 20.0f, 0.1f)  // Position
+        for( int i = 0; i < nr_lights; i++)
+        {
+            Light pointLight = Light(
+                LightType::LightType_Point,
+                glm::vec3(1.0f, 0.5f, 0.0f),   // Color
+                glm::vec3(0.0f, -1.0, -1.0f),  // Direction
+                glm::vec3(i, i, i),         // Position
+                10U                            // Intensity
             );
 
-        app->lights.push_back(light1);
+            app->lights.push_back(pointLight);            
+        }
+
+        /*Light directionalLight1 = Light(
+            LightType::LightType_Directional,
+            glm::vec3(0.5f, 0.5f, 0.5f),   // Color
+            glm::vec3(0.0f, -0.5, 0.5f),   // Direction
+            glm::vec3(0.1f, 20.0f, 0.1f),  // Position
+            0U                            // Intensity
+            );
+
+        Light directionalLight2 = Light(
+            LightType::LightType_Directional,
+            glm::vec3(0.5f, 0.5f, 0.5f),   // Color
+            glm::vec3(0.5f, -0.2, 0.5f),   // Direction
+            glm::vec3(0.1f, 20.0f, 0.1f),  // Position
+            0U                            // Intensity
+            );
+
+        app->lights.push_back(directionalLight1);
+        app->lights.push_back(directionalLight2);*/
     }
 
     // Local parameters
@@ -314,97 +436,14 @@ void Init(App* app)
     glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->globalParamsAlignment);
     app->globalBuffer = CreateConstantBuffer(app->maxGlobalParamsBufferSize);
 
-    // Mode
-    app->mode = Mode::Mode_TexturedMesh;
+    // Init models
+    InitPatrickModel(app);
+    app->planeId = LoadModel(app, "Models/Wall/plane.obj");
+    app->sphereId = LoadModel(app, "Models/Sphere/sphere.obj");
 
-    switch (app->mode)
-    {
-        case Mode::Mode_TexturedQuad:
-        {
-            InitQuad(app);
-
-            break;
-        }
-        case Mode::Mode_TexturedMesh:
-        {
-            InitPatrickModel(app);
-            InitPlane(app); 
-
-            break;
-        }
-        case Mode::Mode_Plane:
-        {
-            InitPlane(app);
-
-            break;
-        }
-        case Mode::Mode_Count:
-        {
-
-            break;
-        }
-        default:
-        {
-            break;
-        }
-    }
-}
-
-void InitQuad(App* app)
-{
-    // Init verts and indices to draw quad
-    VertexV3V2 vertices[] = {
-        {glm::vec3( -0.5, -0.5,  0.0), glm::vec2( 0.0,  0.0) }, // bottom-left
-        {glm::vec3(  0.5, -0.5,  0.0), glm::vec2( 1.0,  0.0) }, // bottom-right
-        {glm::vec3(  0.5,  0.5,  0.0), glm::vec2( 1.0,  1.0) }, // top-right
-        {glm::vec3( -0.5,  0.5,  0.0), glm::vec2( 0.0,  1.0) }, // top-left
-    };
-    
-    u16 indices[] = {
-        0, 1, 2,
-        0, 2, 3
-    };
-
-    // Geometry
-    glGenBuffers(1, &app->embeddedVertices);
-    glBindBuffer(GL_ARRAY_BUFFER, app->embeddedVertices);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    glGenBuffers(1, &app->embeddedElements);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->embeddedElements);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-    // Attribute state
-    glGenVertexArrays(1, &app->vao);
-    glBindVertexArray(app->vao);
-    glBindBuffer(GL_ARRAY_BUFFER, app->embeddedVertices);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexV3V2), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(VertexV3V2), (void*)12);
-    glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->embeddedElements);
-    glBindVertexArray(0);
-
-    app->texturedMeshProgramIdx = LoadProgram(app, "shaders.glsl", "SHOW_TEXTURED_MESH");
-    Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
-    texturedMeshProgram.vertexInputLayout.attributes.push_back({ 0, 3 }); // position
-    texturedMeshProgram.vertexInputLayout.attributes.push_back({ 2, 2 }); // texCoord
-
-    app->programUniformTexture = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
-
-    if (app->programUniformTexture == GL_INVALID_VALUE || app->programUniformTexture == GL_INVALID_OPERATION)
-    {
-        ILOG("ProgramUniformTexture loaded incorrectly");
-    }
-
-    // Texture initialization
-    app->diceTexIdx = LoadTexture2D(app, "dice.png");
-    app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
-    app->blackTexIdx = LoadTexture2D(app, "color_black.png");
-    app->normalTexIdx = LoadTexture2D(app, "color_normal.png");
-    app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");
+    // FBO
+    app->gFbo.Initialize(app->displaySize.x, app->displaySize.y);
+    app->shadingFbo.Initialize(app->displaySize.x, app->displaySize.y);
 }
 
 void InitPatrickModel(App* app)
@@ -438,104 +477,6 @@ void InitPatrickModel(App* app)
     glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBuffer.handle);
     glBufferData(GL_UNIFORM_BUFFER, app->maxUniformBufferSize, NULL, GL_STREAM_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
-}
-
-void InitPlane(App* app)
-{
-    const char* vertexShaderSource = "#version 330 core\n"
-        "layout (location = 0) in vec3 aPos;\n"
-        "void main()\n"
-        "{\n"
-        "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-        "}\0";
-
-    const char* fragmentShaderSource = "#version 330 core\n"
-        "out vec4 FragColor;\n"
-        "void main()\n"
-        "{\n"
-        "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-        "}\0";
-
-    float vertices[] = {
-        0.5f,  0.5f, 0.0f,  // top right
-        0.5f, -0.5f, 0.0f,  // bottom right
-        -0.5f, -0.5f, 0.0f,  // bottom left
-        -0.5f,  0.5f, 0.0f   // top left
-    };   
-
-    unsigned int indices[] = {
-        0, 1, 3,    // first triangle
-        1, 2, 3     // second triangle
-    };
-    
-    // vertex shader
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-    // check for shader compile errors
-    int success;
-    char infoLog[512];
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-    // fragment shader
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-    // check for shader compile errors
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-    // link shaders
-    unsigned int shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    // check for linking errors
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-    }
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    // set up vertex data (and buffer(s)) and configure vertex attributes
-    // ------------------------------------------------------------------
-
-
-    unsigned int VBO, VAO, EBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-    glBindVertexArray(0);
-
-    // Save values in plane struct
-    app->plane.VAO = VAO;    
-    app->plane.shaderProgram = shaderProgram;
 }
 
 void Gui(App* app)
@@ -574,8 +515,8 @@ void Gui(App* app)
 
     // Render target
     ImGui::Separator();
-    ImGui::Text("Render Targets");
-    const char* items[] = { "Albedo", "Normals", "Position", "Depth"};
+    ImGui::Text("Render Targets - gBuffer");
+    const char* items[] = { "Default", "Position", "Normals", "Albedo", "Depth"};
     static int item = 0;
     if (ImGui::Combo("Render Target", &item, items, IM_ARRAYSIZE(items)))
     {
@@ -605,11 +546,12 @@ void Update(App* app)
     {
         AlignHead(app->globalBuffer, sizeof(glm::vec4));
 
-        Light& light = *app->lights[i];
-        PushUInt(app->globalBuffer, light.type);
+        Light& light = app->lights[i];
+        PushUInt(app->globalBuffer, static_cast<u32>(light.type));
+        PushVec3(app->globalBuffer, light.position);
         PushVec3(app->globalBuffer, light.color);
         PushVec3(app->globalBuffer, light.direction);
-        PushVec3(app->globalBuffer, light.position);
+        PushUInt(app->globalBuffer, light.intensity);
     }
 
     app->globalParamsSize = app->globalBuffer.head - app->globalParamsOffset;
@@ -622,15 +564,14 @@ void Update(App* app)
     // Entities
     for (int i = 0; i < app->entities.size(); ++i)
     {
-        //app->uniformBuffer.head = Align(app->uniformBuffer.head, app->uniformBlockAlignment);
         AlignHead(app->uniformBuffer, app->uniformBufferAlignment);
 
-        glm::mat4 world = app->entities[i]->worldMatrix;
-        glm::mat4 worldViewProjection = app->camera.projection * app->camera.viewMatrix * world;
+        glm::mat4 worldMatrix = app->entities[i]->worldMatrix;
+        glm::mat4 worldViewProjectionMatrix = app->camera.projection * app->camera.viewMatrix * worldMatrix;
 
         app->entities[i]->localParamsOffset = app->uniformBuffer.head;
-        PushMat4(app->uniformBuffer, world);
-        PushMat4(app->uniformBuffer, worldViewProjection);
+        PushMat4(app->uniformBuffer, worldMatrix);
+        PushMat4(app->uniformBuffer, worldViewProjectionMatrix);
         app->entities[i]->localParamsSize = app->uniformBuffer.head - app->entities[i]->localParamsOffset;
     }
 
@@ -639,107 +580,222 @@ void Update(App* app)
 
 void Render(App* app)
 {
-    switch (app->mode)
+    // Clear the screen (also ImGui...)
     {
-        case Mode::Mode_TexturedQuad:
-        {
-            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+        glEnable(GL_DEPTH_TEST);
+    }
 
-            glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+    // Render object
+    {
+        app->gFbo.Bind();
 
-            Program& programTexturedGeometry = app->programs[app->texturedMeshProgramIdx];
-            glUseProgram(programTexturedGeometry.handle);
-            glBindVertexArray(app->vao);
+        Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
+        glUseProgram(texturedMeshProgram.handle);
 
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->uniformBuffer.handle, app->globalParamsOffset, app->globalParamsSize);
 
-            glUniform1i(app->programUniformTexture, 0);
-            glActiveTexture(GL_TEXTURE0);
-            GLuint textureHandle = app->textures[app->diceTexIdx].handle;
-            glBindTexture(GL_TEXTURE_2D, textureHandle);
-
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
-
-            glBindVertexArray(0);
-            glUseProgram(0);
-                
-            break;
+        if (app->models.size() == 0) {
+            throw std::invalid_argument("There are no models. Check if there are models in the directory and if LoadModel() is called.");
         }
-        case Mode::Mode_TexturedMesh:
+
+        for (int i = 0; i < app->entities.size(); ++i)
         {
-            // Clear the screen (also ImGui...)
+            if (app->enableDebugGroup)
             {
-                glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-                glViewport(0, 0, app->displaySize.x, app->displaySize.y);
-                glEnable(GL_DEPTH_TEST);
-            }            
-
-            Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
-            glUseProgram(texturedMeshProgram.handle);
-
-            glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->uniformBuffer.handle, app->globalParamsOffset, app->globalParamsSize);
-
-            if (app->models.size() == 0) {
-                throw std::invalid_argument("There are no models. Check if there are models in the directory and if LoadModel() is called.");
+                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Entity");
             }
 
-            for (int i = 0; i < app->entities.size(); ++i)
+            Model& model = app->models[app->entities[i]->modelIndex];
+            Mesh& mesh = app->meshes[model.meshIdx];
+            glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), app->uniformBuffer.handle, app->entities[i]->localParamsOffset, app->entities[i]->localParamsSize);
+
+            for (u32 i = 0; i < mesh.submeshes.size(); ++i)
             {
-                if (app->enableDebugGroup)
-                {
-                    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Shaded model");
-                }
+                GLuint vao = FindVAO(mesh, i, texturedMeshProgram);
+                glBindVertexArray(vao);
 
-                Model& model = app->models[app->entities[i]->modelIndex];
-                Mesh& mesh = app->meshes[model.meshIdx];
-                glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), app->uniformBuffer.handle, app->entities[i]->localParamsOffset, app->entities[i]->localParamsSize);
+                u32 subMeshMaterialIdx = model.materialIdx[i];
+                Material& submeshMaterial = app->materials[subMeshMaterialIdx];
 
-                for (u32 i = 0; i < mesh.submeshes.size(); ++i)
-                {
-                    GLuint vao = FindVAO(mesh, i, texturedMeshProgram);
-                    glBindVertexArray(vao);
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
+                glUniform1i(app->texturedMeshProgram_uTexture, 0);
 
-                    u32 subMeshMaterialIdx = model.materialIdx[i];
-                    Material& submeshMaterial = app->materials[subMeshMaterialIdx];
-
-                    glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
-                    glUniform1i(app->texturedMeshProgram_uTexture, 0);
-
-                    Submesh& submesh = mesh.submeshes[i];
-                    glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
-                }
-
-                if (app->enableDebugGroup)
-                {
-                    glPopDebugGroup();
-                }
+                Submesh& submesh = mesh.submeshes[i];
+                glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
             }
 
-            break;
+            if (app->enableDebugGroup)
+            {
+                glPopDebugGroup();
+            }
         }
-        case Mode::Mode_Plane:
-        {
-            glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT);
 
-            glUseProgram(app->plane.shaderProgram);
-            glBindVertexArray(app->plane.VAO);
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        app->gFbo.Unbind();
+    }
 
-            break;
-        }
-        case Mode::Mode_Count:
-        {
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindVertexArray(0);
+    glUseProgram(0);
+    
+    // Shading pass
+    
+    glDisable(GL_DEPTH_TEST);
 
-            break;
-        }
-        default:
+    app->shadingFbo.Bind();
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    Program& shaderPassProgram = app->programs[app->shadingPassShaderId];
+    glUseProgram(shaderPassProgram.handle);
+
+    glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->globalBuffer.handle, app->globalParamsOffset, app->globalParamsSize);
+
+    glUniform1i(app->programShadingPassUniformTexturePosition, 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(POSITION));
+
+    glUniform1i(app->programShadingPassUniformTextureNormals, 1);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(NORMALS));
+
+    glUniform1i(app->programShadingPassUniformTextureAlbedo, 2);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(ALBEDO));
+
+    glUniform1i(app->programShadingPassUniformTextureDepth, 3);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(DEPTH));
+
+    RenderQuad(app);
+
+    app->shadingFbo.Unbind();
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, 1);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, 2);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, 3);
+
+    glUseProgram(0);
+
+    glEnable(GL_DEPTH_TEST);
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, app->gFbo.GetTexture(FBO));
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, app->shadingFbo.GetTexture(FBO));
+    glBlitFramebuffer(0, 0, app->displaySize.x, app->displaySize.y, 0, 0, app->displaySize.x, app->displaySize.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    app->shadingFbo.Bind(false);
+
+    Program& lightsShader = app->programs[app->lightsShaderId];
+    glUseProgram(lightsShader.handle);
+
+    for (u32 i = 0; i < app->lights.size(); ++i)
+    {
+        if (app->enableDebugGroup)
         {
+            glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Light");
+        }
+
+        // Render directional lights as planes and point lights as spheres
+        u32 modelIndex = 0U;
+        glm::mat4 worldMatrix;
+        switch (app->lights[i].type)
+        {
+        case LightType::LightType_Directional:
+            modelIndex = app->planeId;
+            worldMatrix = TransformPositionScale(app->lights[i].position, glm::vec3(3.0f, 3.0f, 3.0f));
+            worldMatrix = TransformRotation(worldMatrix, 90.0, glm::vec3(1.f, 0.f, 0.f));
+            break;
+        case LightType::LightType_Point:
+            modelIndex = app->sphereId;
+            worldMatrix = TransformPositionScale(app->lights[i].position, glm::vec3(0.3f, 0.3f, 0.3f));
             break;
         }
+
+        glm::mat4 worldViewProjectionMatrix = app->camera.projection * app->camera.viewMatrix * worldMatrix;
+        glUniformMatrix4fv(app->programLightsUniformWorldMatrix, 1, GL_FALSE, (GLfloat*)&worldViewProjectionMatrix);
+        glUniform3f(app->programLightsUniformColor, app->lights[i].color.x, app->lights[i].color.y, app->lights[i].color.z);
+
+        Mesh& mesh = app->meshes[app->models[modelIndex].meshIdx];
+        GLuint vao = FindVAO(mesh, 0, lightsShader);
+        glBindVertexArray(vao);
+
+        glDrawElements(GL_TRIANGLES, mesh.submeshes[0].indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.submeshes[0].indexOffset);
+
+        if (app->enableDebugGroup)
+        {
+            glPopDebugGroup();
+        }
+    }
+
+    app->shadingFbo.Unbind();
+
+    Program& programTexturedGeometry = app->programs[app->texturedGeometryProgramIdx];
+    glUseProgram(programTexturedGeometry.handle);
+
+    glUniform1i(app->programUniformTexture, 0);
+    glActiveTexture(GL_TEXTURE0);
+    if (app->renderTarget == DEFAULT)
+    {
+        glBindTexture(GL_TEXTURE_2D, app->shadingFbo.GetTexture(DEFAULT));
+    }
+    else
+    {
+        glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(app->renderTarget));
+    }
+
+    RenderQuad(app);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glUseProgram(0);
+}
+
+void RenderQuad(App* app)
+{
+    if (app->enableDebugGroup)
+    {
+        glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "RenderQuad");
+    }
+
+    unsigned int quadVAO = 0;
+    unsigned int quadVBO;
+
+    if (quadVAO == 0)
+    {
+        float quadVertices[] =
+        {
+            // positions        // texture Coords
+            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        };
+
+        // setup plane VAO
+        glGenVertexArrays(1, &quadVAO);
+        glGenBuffers(1, &quadVBO);
+        glBindVertexArray(quadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    }
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
+
+    if (app->enableDebugGroup)
+    {
+        glPopDebugGroup();
     }
 }

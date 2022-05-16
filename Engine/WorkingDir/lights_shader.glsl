@@ -1,4 +1,4 @@
-#ifdef TEXTURED_GEOMETRY
+#ifdef LIGHTS_SHADER
 
 #if defined(VERTEX) ///////////////////////////////////////////////////
 
@@ -6,25 +6,22 @@ layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec2 aTexCoord;
 
-out vec2 vTexCoord;
+uniform mat4 uWorldViewProjectionMatrix;
 
 void main()
 {
-	vTexCoord = aTexCoord;
-	gl_Position = vec4(aPosition, 1.0);
+	gl_Position = uWorldViewProjectionMatrix * vec4(aPosition, 1.0);
 }
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
 
-in vec2 vTexCoord;
+uniform vec3 lightColor; 
 
-uniform sampler2D uTexture;
-
-layout(location = 0) out vec4 oColor;
+layout(location = 0) out vec4 FragColor;
 
 void main()
 {
-	oColor = texture(uTexture, vTexCoord);
+	FragColor = vec4(lightColor, 1.0);
 }
 
 #endif

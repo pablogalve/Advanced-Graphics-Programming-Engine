@@ -13,3 +13,8 @@ glm::mat4 TransformPositionScale(const glm::vec3& pos, const glm::vec3& scaleFac
     transform = glm::scale(transform, scaleFactors);
     return transform;
 }
+
+glm::mat4 TransformRotation(const glm::mat4& matrix, float angle, glm::vec3 axis)
+{
+    return glm::mat4();
+}
