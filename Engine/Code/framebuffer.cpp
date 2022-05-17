@@ -52,6 +52,7 @@ void GBuffer::ReserveMemory()
 	glGenTextures(1, &IDs[NORMALS]);
 	glGenTextures(1, &IDs[ALBEDO]);
 	glGenTextures(1, &IDs[DEPTH]);
+
 	glGenFramebuffers(1, &IDs[FBO]);
 	glGenRenderbuffers(1, &IDs[ZBO]);
 }
@@ -63,6 +64,7 @@ void GBuffer::FreeMemory()
 	glDeleteTextures(1, &IDs[NORMALS]);
 	glDeleteTextures(1, &IDs[ALBEDO]);
 	glDeleteTextures(1, &IDs[DEPTH]);
+
 	glDeleteFramebuffers(1, &IDs[FBO]);
 	glDeleteRenderbuffers(1, &IDs[ZBO]);
 }
@@ -88,7 +90,7 @@ void GBuffer::UpdateFBO()
 	glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	glBindTexture(GL_TEXTURE_2D, IDs[ALBEDO]);
+	glBindTexture(GL_TEXTURE_2D, IDs[POSITION]);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -101,7 +103,7 @@ void GBuffer::UpdateFBO()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	glBindTexture(GL_TEXTURE_2D, IDs[POSITION]);
+	glBindTexture(GL_TEXTURE_2D, IDs[ALBEDO]);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -179,7 +181,7 @@ void ShadingBuffer::UpdateFBO()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+	//glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, IDs[FBO]);

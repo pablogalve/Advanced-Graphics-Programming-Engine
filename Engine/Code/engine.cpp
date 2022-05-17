@@ -1,10 +1,3 @@
-//
-// engine.cpp : Put all your graphics stuff in this file. This is kind of the graphics module.
-// In here, you should type all your OpenGL commands, and you can also type code to handle
-// input platform events (e.g to move the camera or react to certain shortcuts), writing some
-// graphics related GUI options, and so on.
-//
-
 #include "engine.h"
 #include <imgui.h>
 #include <stb_image.h>
@@ -35,10 +28,10 @@ GLuint CreateProgramFromSource(String programSource, const char* shaderName)
         programSource.str
     };
     const GLint vertexShaderLengths[] = {
-        (GLint) strlen(versionString),
-        (GLint) strlen(shaderNameDefine),
-        (GLint) strlen(vertexShaderDefine),
-        (GLint) programSource.len
+        (GLint)strlen(versionString),
+        (GLint)strlen(shaderNameDefine),
+        (GLint)strlen(vertexShaderDefine),
+        (GLint)programSource.len
     };
     const GLchar* fragmentShaderSource[] = {
         versionString,
@@ -47,10 +40,10 @@ GLuint CreateProgramFromSource(String programSource, const char* shaderName)
         programSource.str
     };
     const GLint fragmentShaderLengths[] = {
-        (GLint) strlen(versionString),
-        (GLint) strlen(shaderNameDefine),
-        (GLint) strlen(fragmentShaderDefine),
-        (GLint) programSource.len
+        (GLint)strlen(versionString),
+        (GLint)strlen(shaderNameDefine),
+        (GLint)strlen(fragmentShaderDefine),
+        (GLint)programSource.len
     };
 
     GLuint vshader = glCreateShader(GL_VERTEX_SHADER);
@@ -132,14 +125,14 @@ void FreeImage(Image image)
 GLuint CreateTexture2DFromImage(Image image)
 {
     GLenum internalFormat = GL_RGB8;
-    GLenum dataFormat     = GL_RGB;
-    GLenum dataType       = GL_UNSIGNED_BYTE;
+    GLenum dataFormat = GL_RGB;
+    GLenum dataType = GL_UNSIGNED_BYTE;
 
     switch (image.nchannels)
     {
-        case 3: dataFormat = GL_RGB; internalFormat = GL_RGB8; break;
-        case 4: dataFormat = GL_RGBA; internalFormat = GL_RGBA8; break;
-        default: ELOG("LoadTexture2D() - Unsupported number of channels");
+    case 3: dataFormat = GL_RGB; internalFormat = GL_RGB8; break;
+    case 4: dataFormat = GL_RGBA; internalFormat = GL_RGBA8; break;
+    default: ELOG("LoadTexture2D() - Unsupported number of channels");
     }
 
     GLuint texHandle;
@@ -188,7 +181,7 @@ GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
     Submesh& submesh = mesh.submeshes[submeshIndex];
 
     // Try finding a vao for this submesh/program
-    for (u32 i = 0; i < (u32)submesh.vaos.size(); ++i) 
+    for (u32 i = 0; i < (u32)submesh.vaos.size(); ++i)
     {
         if (submesh.vaos[i].programHandle == program.handle)
             return submesh.vaos[i].handle;
@@ -204,7 +197,7 @@ GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.indexBufferHandle);
 
     // We have to link all vertex inputs attributes to attributes in the vertex buffer
-    for (u32 i = 0; i < program.vertexInputLayout.attributes.size(); ++i) 
+    for (u32 i = 0; i < program.vertexInputLayout.attributes.size(); ++i)
     {
         bool attributeWasLinked = false;
 
@@ -243,7 +236,7 @@ void Init(App* app)
     app->glInfo.renderer = (const char*)glGetString(GL_RENDERER);
     app->glInfo.vendor = (const char*)glGetString(GL_VENDOR);
     app->glInfo.GLSLversion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
-       
+
     // Program 
     app->texturedGeometryProgramIdx = LoadProgram(app, "textured_geometry_shader.glsl", "TEXTURED_GEOMETRY");
     Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
@@ -340,12 +333,11 @@ void Init(App* app)
         app->camera.zfar = 1000.0f;
         app->camera.projection = glm::perspective(glm::radians(60.0f), app->camera.aspectRatio, app->camera.znear, app->camera.zfar);
         app->camera.viewMatrix = glm::lookAt(app->camera.position, app->camera.target, glm::vec3(0.0f, 1.0f, 0.0f));
-    }    
+    }
 
     // Program
     app->texturedMeshProgramIdx = LoadProgram(app, "show_textured_mesh.glsl", "SHOW_TEXTURED_MESH");
     Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
-
 
     // Attributes Program 
     int attributeCount;
@@ -364,46 +356,59 @@ void Init(App* app)
         texturedMeshProgram.vertexInputLayout.attributes.push_back({ (u8)attributeLocation,(u8)attributeSize });
     }
 
+    // Init models
+    InitPatrickModel(app);
+    app->planeId = LoadModel(app, "Models/Wall/plane.obj");
+    app->sphereId = LoadModel(app, "Models/Sphere/sphere.obj");
+
     // Gameobjects - Entities and lights
     {
+        std::unique_ptr<Entity> ground = std::make_unique<Entity>(
+            glm::vec3(0.0f, 0.0f, 0.0f),  // Position
+            glm::vec3(1.0f),              // Scale factor
+            app->planeId,                 // Model index
+            EntityType::PATRICK           // Type
+            );
+
         std::unique_ptr<Entity> patrick1 = std::make_unique<Entity>(
             glm::vec3(10.0f, 1.5f, 0.0f), // Position
             glm::vec3(1.0f),              // Scale factor
-            0,                            // Model index
+            app->patrickTexIdx,           // Model index
             EntityType::PATRICK           // Type
             );
 
         std::unique_ptr<Entity> patrick2 = std::make_unique<Entity>(
             glm::vec3(2.5f, 1.5f, 0.0f),  // Position
             glm::vec3(1.0f),              // Scale factor
-            0,                            // Model index
+            app->patrickTexIdx,           // Model index
             EntityType::PATRICK           // Type
             );
 
         std::unique_ptr<Entity> patrick3 = std::make_unique<Entity>(
             glm::vec3(0.0f, 1.5f, -2.0f), // Position
             glm::vec3(1.0f),              // Scale factor
-            0,                            // Model index
+            app->patrickTexIdx,                 // Model index
             EntityType::PATRICK           // Type
             );
 
+        app->entities.push_back(std::move(ground));
         app->entities.push_back(std::move(patrick1));
         app->entities.push_back(std::move(patrick2));
         app->entities.push_back(std::move(patrick3));
-               
+
         const int nr_lights = 3;
 
-        for( int i = 0; i < nr_lights; i++)
+        for (int i = 0; i < nr_lights; i++)
         {
             Light pointLight = Light(
                 LightType::LightType_Point,
                 glm::vec3(1.0f, 0.5f, 0.0f),   // Color
                 glm::vec3(0.0f, -1.0, -1.0f),  // Direction
-                glm::vec3(i, i, i),         // Position
-                10U                            // Intensity
+                glm::vec3(-i, i, i),         // Position
+                5U                            // Intensity
             );
 
-            app->lights.push_back(pointLight);            
+            app->lights.push_back(pointLight);
         }
 
         /*Light directionalLight1 = Light(
@@ -411,17 +416,15 @@ void Init(App* app)
             glm::vec3(0.5f, 0.5f, 0.5f),   // Color
             glm::vec3(0.0f, -0.5, 0.5f),   // Direction
             glm::vec3(0.1f, 20.0f, 0.1f),  // Position
-            0U                            // Intensity
+            10U                             // Intensity
             );
-
         Light directionalLight2 = Light(
             LightType::LightType_Directional,
             glm::vec3(0.5f, 0.5f, 0.5f),   // Color
             glm::vec3(0.5f, -0.2, 0.5f),   // Direction
             glm::vec3(0.1f, 20.0f, 0.1f),  // Position
-            0U                            // Intensity
+            10U                             // Intensity
             );
-
         app->lights.push_back(directionalLight1);
         app->lights.push_back(directionalLight2);*/
     }
@@ -435,11 +438,6 @@ void Init(App* app)
     glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxGlobalParamsBufferSize);
     glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->globalParamsAlignment);
     app->globalBuffer = CreateConstantBuffer(app->maxGlobalParamsBufferSize);
-
-    // Init models
-    InitPatrickModel(app);
-    app->planeId = LoadModel(app, "Models/Wall/plane.obj");
-    app->sphereId = LoadModel(app, "Models/Sphere/sphere.obj");
 
     // FBO
     app->gFbo.Initialize(app->displaySize.x, app->displaySize.y);
@@ -516,7 +514,7 @@ void Gui(App* app)
     // Render target
     ImGui::Separator();
     ImGui::Text("Render Targets - gBuffer");
-    const char* items[] = { "Default", "Position", "Normals", "Albedo", "Depth"};
+    const char* items[] = { "Default", "Position", "Normals", "Albedo", "Depth" };
     static int item = 0;
     if (ImGui::Combo("Render Target", &item, items, IM_ARRAYSIZE(items)))
     {
@@ -526,7 +524,7 @@ void Gui(App* app)
     ImGui::Separator();
     ImGui::Checkbox("Enable debug groups", &app->enableDebugGroup);
 
-    ImGui::End();      
+    ImGui::End();
 }
 
 void Update(App* app)
@@ -592,7 +590,7 @@ void Render(App* app)
     {
         app->gFbo.Bind();
 
-        Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
+        Program& texturedMeshProgram = app->programs[app->geometryPassShaderId];
         glUseProgram(texturedMeshProgram.handle);
 
         glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->uniformBuffer.handle, app->globalParamsOffset, app->globalParamsSize);
@@ -640,9 +638,9 @@ void Render(App* app)
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindVertexArray(0);
     glUseProgram(0);
-    
+
     // Shading pass
-    
+
     glDisable(GL_DEPTH_TEST);
 
     app->shadingFbo.Bind();
@@ -677,11 +675,11 @@ void Render(App* app)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, 1);
+    glBindTexture(GL_TEXTURE_2D, 0);
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, 2);
+    glBindTexture(GL_TEXTURE_2D, 0);
     glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, 3);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     glUseProgram(0);
 
@@ -709,15 +707,15 @@ void Render(App* app)
         glm::mat4 worldMatrix;
         switch (app->lights[i].type)
         {
-        case LightType::LightType_Directional:
-            modelIndex = app->planeId;
-            worldMatrix = TransformPositionScale(app->lights[i].position, glm::vec3(3.0f, 3.0f, 3.0f));
-            worldMatrix = TransformRotation(worldMatrix, 90.0, glm::vec3(1.f, 0.f, 0.f));
-            break;
-        case LightType::LightType_Point:
-            modelIndex = app->sphereId;
-            worldMatrix = TransformPositionScale(app->lights[i].position, glm::vec3(0.3f, 0.3f, 0.3f));
-            break;
+            case LightType::LightType_Directional:
+                modelIndex = app->planeId;
+                worldMatrix = TransformPositionScale(app->lights[i].position, glm::vec3(3.0f, 3.0f, 3.0f));
+                worldMatrix = TransformRotation(worldMatrix, 90.0, glm::vec3(1.f, 0.f, 0.f));
+                break;
+            case LightType::LightType_Point:
+                modelIndex = app->sphereId;
+                worldMatrix = TransformPositionScale(app->lights[i].position, glm::vec3(0.3f, 0.3f, 0.3f));
+                break;
         }
 
         glm::mat4 worldViewProjectionMatrix = app->camera.projection * app->camera.viewMatrix * worldMatrix;
