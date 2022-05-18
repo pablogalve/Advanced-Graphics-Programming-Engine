@@ -193,7 +193,7 @@ struct App
     u32 normalTexIdx;
     u32 magentaTexIdx;
 
-    u32 patrickTexIdx;
+    // model id
     u32 planeId;
     u32 sphereId;
 
@@ -239,8 +239,6 @@ struct App
 
 void Init(App* app);
 
-void InitPatrickModel(App* app);
-
 void Gui(App* app);
 
 void Update(App* app);
@@ -252,3 +250,5 @@ void RenderQuad(App* app);
 u32 LoadTexture2D(App* app, const char* filepath);
 
 GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
+
+void SetAttributes(Program& program);

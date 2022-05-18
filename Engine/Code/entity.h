@@ -5,6 +5,7 @@
 enum class EntityType
 {
     PATRICK,
+    PLANE,
     NONE
 };
 

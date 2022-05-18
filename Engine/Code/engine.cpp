@@ -229,6 +229,25 @@ GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
     return vaoHandle;
 }
 
+void SetAttributes(Program& program)
+{
+    int attributeCount;
+    glGetProgramiv(program.handle, GL_ACTIVE_ATTRIBUTES, &attributeCount);
+
+    GLchar attributeName[64];
+    GLsizei attributeNameLength;
+    GLint attributeSize;
+    GLenum attributeType;
+
+    for (int i = 0; i < attributeCount; ++i)
+    {
+        glGetActiveAttrib(program.handle, i, 64, &attributeNameLength, &attributeSize, &attributeType, attributeName);
+
+        GLint attributeLocation = glGetAttribLocation(program.handle, attributeName);
+        program.vertexInputLayout.attributes.push_back({ (u8)attributeLocation,(u8)attributeSize });
+    }
+}
+
 void Init(App* app)
 {
     // Get OpenGL Information
@@ -245,24 +264,7 @@ void Init(App* app)
     app->geometryPassShaderId = LoadProgram(app, "geometry_pass_shader.glsl", "GEOMETRY_PASS_SHADER");
     Program& geometryPassShader = app->programs[app->geometryPassShaderId];
     app->programGPassUniformTexture = glGetUniformLocation(geometryPassShader.handle, "uTexture");
-
-    {
-        int attributeCount;
-        glGetProgramiv(geometryPassShader.handle, GL_ACTIVE_ATTRIBUTES, &attributeCount);
-
-        GLchar attributeName[64];
-        GLsizei attributeNameLength;
-        GLint attributeSize;
-        GLenum attributeType;
-
-        for (int i = 0; i < attributeCount; ++i)
-        {
-            glGetActiveAttrib(geometryPassShader.handle, i, 64, &attributeNameLength, &attributeSize, &attributeType, attributeName);
-
-            GLint attributeLocation = glGetAttribLocation(geometryPassShader.handle, attributeName);
-            geometryPassShader.vertexInputLayout.attributes.push_back({ (u8)attributeLocation,(u8)attributeSize });
-        }
-    }
+    SetAttributes(geometryPassShader);
 
     // Program
     app->shadingPassShaderId = LoadProgram(app, "shading_pass_shader.glsl", "SHADING_PASS_SHADER");
@@ -271,47 +273,17 @@ void Init(App* app)
     app->programShadingPassUniformTextureNormals = glGetUniformLocation(shadingPassShader.handle, "gNormal");
     app->programShadingPassUniformTextureAlbedo = glGetUniformLocation(shadingPassShader.handle, "gAlbedoSpec");
     app->programShadingPassUniformTextureDepth = glGetUniformLocation(shadingPassShader.handle, "gDepth");
-
-    {
-        int attributeCount;
-        glGetProgramiv(shadingPassShader.handle, GL_ACTIVE_ATTRIBUTES, &attributeCount);
-
-        GLchar attributeName[64];
-        GLsizei attributeNameLength;
-        GLint attributeSize;
-        GLenum attributeType;
-
-        for (int i = 0; i < attributeCount; ++i)
-        {
-            glGetActiveAttrib(shadingPassShader.handle, i, 64, &attributeNameLength, &attributeSize, &attributeType, attributeName);
-
-            GLint attributeLocation = glGetAttribLocation(shadingPassShader.handle, attributeName);
-            shadingPassShader.vertexInputLayout.attributes.push_back({ (u8)attributeLocation,(u8)attributeSize });
-        }
-    }
-
+    SetAttributes(shadingPassShader);
+    
     app->lightsShaderId = LoadProgram(app, "lights_shader.glsl", "LIGHTS_SHADER");
     Program& lightsShader = app->programs[app->lightsShaderId];
     app->programLightsUniformColor = glGetUniformLocation(lightsShader.handle, "lightColor");
     app->programLightsUniformWorldMatrix = glGetUniformLocation(lightsShader.handle, "uWorldViewProjectionMatrix");
+    SetAttributes(lightsShader);
 
-    {
-        int attributeCount;
-        glGetProgramiv(lightsShader.handle, GL_ACTIVE_ATTRIBUTES, &attributeCount);
-
-        GLchar attributeName[64];
-        GLsizei attributeNameLength;
-        GLint attributeSize;
-        GLenum attributeType;
-
-        for (int i = 0; i < attributeCount; ++i)
-        {
-            glGetActiveAttrib(lightsShader.handle, i, 64, &attributeNameLength, &attributeSize, &attributeType, attributeName);
-
-            GLint attributeLocation = glGetAttribLocation(lightsShader.handle, attributeName);
-            lightsShader.vertexInputLayout.attributes.push_back({ (u8)attributeLocation,(u8)attributeSize });
-        }
-    }
+    app->texturedMeshProgramIdx = LoadProgram(app, "show_textured_mesh.glsl", "SHOW_TEXTURED_MESH");
+    Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
+    SetAttributes(texturedMeshProgram);
 
     // Textures 
     app->diceTexIdx = LoadTexture2D(app, "dice.png");
@@ -320,30 +292,23 @@ void Init(App* app)
     app->normalTexIdx = LoadTexture2D(app, "color_normal.png");
     app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");
 
-    // Camera
-    {
-        app->camera = Camera(
-            glm::vec3(0.0f, 4.0f, 15.0f),          // Position
-            glm::vec3(-90.0f, 0.0f, 0.0f)         // Rotation
-        );
+    // Camera    
+    app->camera = Camera(
+        glm::vec3(0.0f, 4.0f, 15.0f),          // Position
+        glm::vec3(-90.0f, 0.0f, 0.0f)          // Rotation
+    );
 
-        app->camera.target = glm::vec3(glm::vec3(0.0f, 0.0f, 0.0f));
-        app->camera.aspectRatio = (float)app->displaySize.x / (float)app->displaySize.y;
-        app->camera.znear = 0.1f;
-        app->camera.zfar = 1000.0f;
-        app->camera.projection = glm::perspective(glm::radians(60.0f), app->camera.aspectRatio, app->camera.znear, app->camera.zfar);
-        app->camera.viewMatrix = glm::lookAt(app->camera.position, app->camera.target, glm::vec3(0.0f, 1.0f, 0.0f));
-    }
-        
+    app->camera.target = glm::vec3(glm::vec3(0.0f, 0.0f, 0.0f));
+    app->camera.aspectRatio = (float)app->displaySize.x / (float)app->displaySize.y;
+    app->camera.znear = 0.1f;
+    app->camera.zfar = 1000.0f;
+    app->camera.projection = glm::perspective(glm::radians(60.0f), app->camera.aspectRatio, app->camera.znear, app->camera.zfar);
+    app->camera.viewMatrix = glm::lookAt(app->camera.position, app->camera.target, glm::vec3(0.0f, 1.0f, 0.0f));
+            
     // Init models
-    InitPatrickModel(app);
+    u32 patrickTexIdx = LoadModel(app, "Models/Patrick/Patrick.obj");
     app->planeId = LoadModel(app, "Models/Wall/plane.obj");
     app->sphereId = LoadModel(app, "Models/Sphere/sphere.obj");
-
-    // Program
-    app->texturedMeshProgramIdx = LoadProgram(app, "show_textured_mesh.glsl", "SHOW_TEXTURED_MESH");
-    Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
-
 
     // Attributes Program 
     int attributeCount;
@@ -365,30 +330,30 @@ void Init(App* app)
     // Gameobjects - Entities and lights
     {
         std::unique_ptr<Entity> ground = std::make_unique<Entity>(
-            glm::vec3(0.0f, 0.0f, 0.0f),  // Position
+            glm::vec3(0.0f, -2.0f, 0.0f),  // Position
             glm::vec3(1.0f),              // Scale factor
             app->planeId,                 // Model index
-            EntityType::PATRICK           // Type
+            EntityType::PLANE             // Type
             );
 
         std::unique_ptr<Entity> patrick1 = std::make_unique<Entity>(
             glm::vec3(10.0f, 1.5f, 0.0f), // Position
             glm::vec3(1.0f),              // Scale factor
-            app->patrickTexIdx,           // Model index
+            patrickTexIdx,                // Model index
             EntityType::PATRICK           // Type
             );
 
         std::unique_ptr<Entity> patrick2 = std::make_unique<Entity>(
             glm::vec3(2.5f, 1.5f, 0.0f),  // Position
             glm::vec3(1.0f),              // Scale factor
-            app->patrickTexIdx,           // Model index
+            patrickTexIdx,                // Model index
             EntityType::PATRICK           // Type
             );
 
         std::unique_ptr<Entity> patrick3 = std::make_unique<Entity>(
             glm::vec3(0.0f, 1.5f, -2.0f), // Position
             glm::vec3(1.0f),              // Scale factor
-            app->patrickTexIdx,                 // Model index
+            patrickTexIdx,                // Model index
             EntityType::PATRICK           // Type
             );
 
@@ -443,39 +408,6 @@ void Init(App* app)
     // FBO
     app->gFbo.Initialize(app->displaySize.x, app->displaySize.y);
     app->shadingFbo.Initialize(app->displaySize.x, app->displaySize.y);
-}
-
-void InitPatrickModel(App* app)
-{
-    app->patrickTexIdx = LoadModel(app, "Models/Patrick/Patrick.obj");
-
-    app->texturedMeshProgramIdx = LoadProgram(app, "geometry_pass_shader.glsl", "GEOMETRY_PASS_SHADER");
-    Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
-
-    int attributeCount = 0;
-    glGetProgramiv(texturedMeshProgram.handle, GL_ACTIVE_ATTRIBUTES, &attributeCount);
-
-    for (int i = 0; i < attributeCount; ++i)
-    {
-        GLchar attribName[100];
-        int attribNameLength = 0, attribSize = 0;
-        GLenum attribType;
-
-        glGetActiveAttrib(texturedMeshProgram.handle, i, ARRAY_COUNT(attribName), &attribNameLength, &attribSize, &attribType, attribName);
-
-        int attributeLocation = glGetAttribLocation(texturedMeshProgram.handle, attribName);
-
-        texturedMeshProgram.vertexInputLayout.attributes.push_back({ (u8)attributeLocation, (u8)attribSize });
-    }
-
-    // Uniforms initialization
-    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
-    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBufferAlignment);
-
-    glGenBuffers(1, &app->uniformBuffer.handle);
-    glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBuffer.handle);
-    glBufferData(GL_UNIFORM_BUFFER, app->maxUniformBufferSize, NULL, GL_STREAM_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void Gui(App* app)
