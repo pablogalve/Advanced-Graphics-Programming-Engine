@@ -170,7 +170,7 @@ struct App
     glm::ivec2 displaySize;
 
     Camera camera;    
-    std::vector <std::unique_ptr<Entity>> entities;
+    std::vector<Entity> entities;
     std::vector<Light> lights;
 
     std::vector<Texture>  textures;

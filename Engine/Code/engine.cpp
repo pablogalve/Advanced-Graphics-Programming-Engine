@@ -329,38 +329,34 @@ void Init(App* app)
 
     // Gameobjects - Entities and lights
     {
-        std::unique_ptr<Entity> ground = std::make_unique<Entity>(
+        Entity ground = Entity(
             glm::vec3(0.0f, -2.0f, 0.0f),  // Position
             glm::vec3(1.0f),              // Scale factor
-            app->planeId,                 // Model index
-            EntityType::PLANE             // Type
+            app->planeId                  // Model index
             );
 
-        std::unique_ptr<Entity> patrick1 = std::make_unique<Entity>(
+        Entity patrick1 = Entity(
             glm::vec3(10.0f, 1.5f, 0.0f), // Position
             glm::vec3(1.0f),              // Scale factor
-            patrickTexIdx,                // Model index
-            EntityType::PATRICK           // Type
+            patrickTexIdx                 // Model index
             );
 
-        std::unique_ptr<Entity> patrick2 = std::make_unique<Entity>(
+        Entity patrick2 = Entity(
             glm::vec3(2.5f, 1.5f, 0.0f),  // Position
             glm::vec3(1.0f),              // Scale factor
-            patrickTexIdx,                // Model index
-            EntityType::PATRICK           // Type
+            patrickTexIdx                 // Model index
             );
 
-        std::unique_ptr<Entity> patrick3 = std::make_unique<Entity>(
+        Entity patrick3 = Entity(
             glm::vec3(0.0f, 1.5f, -2.0f), // Position
             glm::vec3(1.0f),              // Scale factor
-            patrickTexIdx,                // Model index
-            EntityType::PATRICK           // Type
+            patrickTexIdx                 // Model index
             );
 
-        app->entities.push_back(std::move(ground));
-        app->entities.push_back(std::move(patrick1));
-        app->entities.push_back(std::move(patrick2));
-        app->entities.push_back(std::move(patrick3));
+        app->entities.push_back(ground);
+        app->entities.push_back(patrick1);
+        app->entities.push_back(patrick2);
+        app->entities.push_back(patrick3);
                
         const int nr_lights = 3;
 
@@ -497,13 +493,13 @@ void Update(App* app)
     {
         AlignHead(app->uniformBuffer, app->uniformBufferAlignment);
 
-        glm::mat4 worldMatrix = app->entities[i]->worldMatrix;
+        glm::mat4 worldMatrix = app->entities[i].worldMatrix;
         glm::mat4 worldViewProjectionMatrix = app->camera.projection * app->camera.viewMatrix * worldMatrix;
 
-        app->entities[i]->localParamsOffset = app->uniformBuffer.head;
+        app->entities[i].localParamsOffset = app->uniformBuffer.head;
         PushMat4(app->uniformBuffer, worldMatrix);
         PushMat4(app->uniformBuffer, worldViewProjectionMatrix);
-        app->entities[i]->localParamsSize = app->uniformBuffer.head - app->entities[i]->localParamsOffset;
+        app->entities[i].localParamsSize = app->uniformBuffer.head - app->entities[i].localParamsOffset;
     }
 
     UnmapBuffer(app->uniformBuffer);
@@ -539,9 +535,9 @@ void Render(App* app)
                 glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Entity");
             }
 
-            Model& model = app->models[app->entities[i]->modelIndex];
+            Model& model = app->models[app->entities[i].modelIndex];
             Mesh& mesh = app->meshes[model.meshIdx];
-            glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), app->uniformBuffer.handle, app->entities[i]->localParamsOffset, app->entities[i]->localParamsSize);
+            glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), app->uniformBuffer.handle, app->entities[i].localParamsOffset, app->entities[i].localParamsSize);
 
             for (u32 i = 0; i < mesh.submeshes.size(); ++i)
             {
@@ -616,6 +612,7 @@ void Render(App* app)
 
     glUseProgram(0);
 
+    // Render lights on top of the scene
     glEnable(GL_DEPTH_TEST);
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, app->gFbo.GetTexture(RenderTargetType::FBO));
