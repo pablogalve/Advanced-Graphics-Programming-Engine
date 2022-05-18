@@ -244,4 +244,4 @@ GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
 
 void SetAttributes(Program& program);
 
-void InitEntitiesInBulk(App* app, std::vector<glm::vec3> positions, u32 textureId, float scaleFactor = 1.0f);
+void InitEntitiesInBulk(App* app, std::vector<glm::vec3> positions, u32 modelId, float scaleFactor = 1.0f);

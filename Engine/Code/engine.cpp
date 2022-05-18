@@ -248,18 +248,18 @@ void SetAttributes(Program& program)
     }
 }
 
-void InitEntitiesInBulk(App* app, std::vector<glm::vec3> positions, u32 textureId, float scaleFactor)
+void InitEntitiesInBulk(App* app, std::vector<glm::vec3> positions, u32 modelId, float scaleFactor)
 {
     int nr_entities = positions.size();
     for (int i = 0; i < nr_entities; ++i)
     {
-        Entity patrick = Entity(
+        Entity entity = Entity(
             positions[i],           // Position
             glm::vec3(scaleFactor), // Scale factor
-            textureId               // Model index
+            modelId               // Model index
         );
 
-        app->entities.push_back(patrick);
+        app->entities.push_back(entity);
     }
 }
 
@@ -301,11 +301,11 @@ void Init(App* app)
     SetAttributes(texturedMeshProgram);
 
     // Textures 
-    app->diceTexIdx = LoadTexture2D(app, "dice.png");
+    /*app->diceTexIdx = LoadTexture2D(app, "dice.png");
     app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
     app->blackTexIdx = LoadTexture2D(app, "color_black.png");
     app->normalTexIdx = LoadTexture2D(app, "color_normal.png");
-    app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");
+    app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");*/
 
     // Camera    
     app->camera = Camera(
@@ -324,28 +324,15 @@ void Init(App* app)
     u32 patrickTexIdx = LoadModel(app, "Models/Patrick/Patrick.obj");
     app->planeId = LoadModel(app, "Models/Wall/plane.obj");
     app->sphereId = LoadModel(app, "Models/Sphere/sphere.obj");
-    u32 cyborgId = LoadModel(app, "Models/cyborg/cyborg.obj");
-
-    // Attributes Program 
-    int attributeCount;
-    glGetProgramiv(texturedMeshProgram.handle, GL_ACTIVE_ATTRIBUTES, &attributeCount);
-
-    GLchar attributeName[64];
-    GLsizei attributeNameLength;
-    GLint attributeSize;
-    GLenum attributeType;
-
-    for (int i = 0; i < attributeCount; ++i)
-    {
-        glGetActiveAttrib(texturedMeshProgram.handle, i, 64, &attributeNameLength, &attributeSize, &attributeType, attributeName);
-
-        GLint attributeLocation = glGetAttribLocation(texturedMeshProgram.handle, attributeName);
-        texturedMeshProgram.vertexInputLayout.attributes.push_back({ (u8)attributeLocation,(u8)attributeSize });
-    }
-
+    u32 cyborgId = LoadModel(app, "Models/Cyborg/cyborg.obj");
+    u32 planetMarsId = LoadModel(app, "Models/Planet/Mars/mars.obj");
+    u32 woodenCartId = LoadModel(app, "Models/WoodenCart/cart_OBJ.obj");
+        
     // Gameobjects - Entities and lights
     {
         std::vector<glm::vec3> groundPos = { glm::vec3(0.0f, -2.0f, 0.0f) };
+        std::vector<glm::vec3> marsPos = { glm::vec3(0.0f, -127.5f, 0.0f)};
+        std::vector<glm::vec3> woodenCartPos = { glm::vec3(0.0f, 0.0f, 0.0f)};
 
         // Add patricks
         std::vector<glm::vec3> patricksPos = {
@@ -366,9 +353,11 @@ void Init(App* app)
             glm::vec3(6.0f, -2.0f, 15.0f),
         };
 
-        InitEntitiesInBulk(app, groundPos, app->planeId, 1.0f);
+        //InitEntitiesInBulk(app, groundPos, app->planeId, 1.0f);
         InitEntitiesInBulk(app, patricksPos, patrickTexIdx, 1.0f);
         InitEntitiesInBulk(app, cyborgsPos, cyborgId, 2.0f);
+        InitEntitiesInBulk(app, marsPos, planetMarsId, 37.5f);
+        InitEntitiesInBulk(app, woodenCartPos, woodenCartId, 3.0f);
     }
 
     // Add lights
