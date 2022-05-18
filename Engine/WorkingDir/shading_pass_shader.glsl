@@ -128,10 +128,10 @@ vec3 CalculateLighting(Light light, vec3 normal, vec3 view_dir, vec3 frag_pos, v
 	switch(light.type)
 	{
 		case 0: 
-			result = CalculatePointLight(light, normal, view_dir, frag_pos, pixelColor);
+			result = CalculateDirectionalLight(light, normal, view_dir, pixelColor);
 			break;
 		case 1:
-			result = CalculateDirectionalLight(light, normal, view_dir, pixelColor);
+			result = CalculatePointLight(light, normal, view_dir, frag_pos, pixelColor);
 			break;
 
 		default: break;

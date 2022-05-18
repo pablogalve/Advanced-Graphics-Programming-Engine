@@ -300,13 +300,6 @@ void Init(App* app)
     Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
     SetAttributes(texturedMeshProgram);
 
-    // Textures 
-    /*app->diceTexIdx = LoadTexture2D(app, "dice.png");
-    app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
-    app->blackTexIdx = LoadTexture2D(app, "color_black.png");
-    app->normalTexIdx = LoadTexture2D(app, "color_normal.png");
-    app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");*/
-
     // Camera    
     app->camera = Camera(
         glm::vec3(0.0f, 4.0f, 15.0f),          // Position
@@ -361,14 +354,23 @@ void Init(App* app)
     }
 
     // Add lights
-    const u32 nr_lights = 7;
+    const u32 nr_lights = 15;
     glm::vec3 pointLightsPos[nr_lights] =
     {
-        glm::vec3(3.0f, 1.0f, 8.0f),
-        glm::vec3(12.0f, 3.0f, 3.0f),
-        glm::vec3(16.0f, 5.0f, 4.0f),
-        glm::vec3(27.0f, 10.0f, 30.0f),
-        glm::vec3(2.0f, 9.0f, 17.0f),
+        glm::vec3(-100.0f, -50.0f, -10.0f),  // Around planet surfice
+        glm::vec3(-75.0f, -25.0f, -10.0f),   // Around planet surfice
+        glm::vec3(-50.0f, -10.0f, -10.0f),   // Around planet surfice
+        glm::vec3(0.0f, 5.0f, 0.0f),         // Inside the the wooden cart
+        glm::vec3(2.0f, 1.5f, 16.0f),        // Illuminating Patrick 
+        glm::vec3(7.0f, 1.5f, 20.0f),        // Illuminating Patrick 
+        glm::vec3(3.0f, 1.5f, 32.0f),        // Illuminating Patrick 
+        glm::vec3(-5.0f, 1.5f, 28.0f),       // Illuminating Patrick 
+        glm::vec3(-16.0f, 1.5f, -13.0f),     // Illuminating Patrick 
+        glm::vec3(1.0f, 6.0f, 5.0f),         // Illuminating cyborg 
+        glm::vec3(15.0f, 6.0f, 1.0f),        // Illuminating cyborg 
+        glm::vec3(10.0f, 6.0f, 5.0f),        // Illuminating cyborg 
+        glm::vec3(1.0f, 6.0f, 32.0f),        // Illuminating cyborg 
+        glm::vec3(6.0f, 6.0f, 13.0f),        // Illuminating cyborg 
     };
     
     for (int i = 0; i < nr_lights; i++)
@@ -378,28 +380,28 @@ void Init(App* app)
             glm::vec3(1.0f, 0.5f, 0.0f),   // Color
             glm::vec3(0.0f, -1.0, -1.0f),  // Direction
             pointLightsPos[i],             // Position
-            10U                            // Intensity
+            200U                            // Intensity
         );
 
         app->lights.push_back(pointLight);
     }
 
-    /*Light directionalLight1 = Light(
+    Light directionalLight1 = Light(
         LightType::LightType_Directional,
-        glm::vec3(0.5f, 0.5f, 0.5f),   // Color
-        glm::vec3(0.0f, -0.5, 0.5f),   // Direction
-        glm::vec3(0.1f, 20.0f, 0.1f),  // Position
-        10U                             // Intensity
+        glm::vec3(0.5f, 0.5f, 0.5f),    // Color
+        glm::vec3(-0.5f, -0.5, 0.5f),   // Direction
+        glm::vec3(0.1f, 20.0f, 0.1f),   // Position
+        30U                             // Intensity
         );
     Light directionalLight2 = Light(
         LightType::LightType_Directional,
-        glm::vec3(0.5f, 0.5f, 0.5f),   // Color
-        glm::vec3(0.5f, -0.2, 0.5f),   // Direction
-        glm::vec3(0.1f, 20.0f, 0.1f),  // Position
-        10U                             // Intensity
+        glm::vec3(0.5f, 0.5f, 0.5f),    // Color
+        glm::vec3(-1.0f, -0.5, 0.0f),   // Direction
+        glm::vec3(0.1f, 20.0f, 0.1f) ,  // Position
+        50U                             // Intensity
         );
     app->lights.push_back(directionalLight1);
-    app->lights.push_back(directionalLight2);*/
+    app->lights.push_back(directionalLight2);
     
     // Local parameters
     glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
