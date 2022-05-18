@@ -22,12 +22,12 @@ public:
 
 	~FrameBuffer();
 
-	void Initialize(float _width, float _height);
+	void Initialize(float displayWidth, float displayHeight);
 
-	virtual void ReserveMemory() = 0;
+	virtual void ReserveMemory(float displayWidth, float displayHeight) = 0;
 	virtual void FreeMemory() {}
 
-	virtual void UpdateFBO() = 0;
+	virtual void UpdateFBO(float displayWidth, float displayHeight) = 0;
 
 	void Bind(bool aClear = true);
 	void Unbind();
@@ -36,9 +36,6 @@ public:
 
 protected:
 
-	float width = 0.f;
-	float height = 0.f;
-
 	u32 IDs[RenderTargetType::MAX];
 };
 
@@ -46,17 +43,17 @@ class GBuffer : public FrameBuffer
 {
 public:
 
-	void ReserveMemory() override;
+	void ReserveMemory(float displayWidth, float displayHeight) override;
 	void FreeMemory() override;
 
-	void UpdateFBO() override;
+	void UpdateFBO(float displayWidth, float displayHeight) override;
 };
 
 class ShadingBuffer : public FrameBuffer
 {
 public:
-	void ReserveMemory() override;
+	void ReserveMemory(float displayWidth, float displayHeight) override;
 	void FreeMemory() override;
 
-	void UpdateFBO() override;
+	void UpdateFBO(float displayWidth, float displayHeight) override;
 };
