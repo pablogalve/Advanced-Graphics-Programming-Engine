@@ -2,7 +2,7 @@
 
 #include "platform.h"
 
-enum RenderTargetType
+enum class RenderTargetType
 {
 	DEFAULT = 0,
 	POSITION,
@@ -36,7 +36,9 @@ public:
 
 protected:
 
-	u32 IDs[RenderTargetType::MAX];
+	u32 defaultTexture;
+	u32 gBuffer, gPosition, gNormal, gAlbedoSpec, rboDepth;
+	u32 zbo;
 };
 
 class GBuffer : public FrameBuffer

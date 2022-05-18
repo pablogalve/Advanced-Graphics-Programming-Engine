@@ -587,19 +587,19 @@ void Render(App* app)
 
     glUniform1i(app->programShadingPassUniformTexturePosition, 0);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(POSITION));
+    glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(RenderTargetType::POSITION));
 
     glUniform1i(app->programShadingPassUniformTextureNormals, 1);
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(NORMALS));
+    glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(RenderTargetType::NORMALS));
 
     glUniform1i(app->programShadingPassUniformTextureAlbedo, 2);
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(ALBEDO));
+    glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(RenderTargetType::ALBEDO));
 
     glUniform1i(app->programShadingPassUniformTextureDepth, 3);
     glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(DEPTH));
+    glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(RenderTargetType::DEPTH));
 
     RenderQuad(app);
 
@@ -618,8 +618,8 @@ void Render(App* app)
 
     glEnable(GL_DEPTH_TEST);
 
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, app->gFbo.GetTexture(FBO));
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, app->shadingFbo.GetTexture(FBO));
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, app->gFbo.GetTexture(RenderTargetType::FBO));
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, app->shadingFbo.GetTexture(RenderTargetType::FBO));
     glBlitFramebuffer(0, 0, app->displaySize.x, app->displaySize.y, 0, 0, app->displaySize.x, app->displaySize.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -674,9 +674,9 @@ void Render(App* app)
 
     glUniform1i(app->programUniformTexture, 0);
     glActiveTexture(GL_TEXTURE0);
-    if (app->renderTarget == DEFAULT)
+    if (app->renderTarget == RenderTargetType::DEFAULT)
     {
-        glBindTexture(GL_TEXTURE_2D, app->shadingFbo.GetTexture(DEFAULT));
+        glBindTexture(GL_TEXTURE_2D, app->shadingFbo.GetTexture(RenderTargetType::DEFAULT));
     }
     else
     {
