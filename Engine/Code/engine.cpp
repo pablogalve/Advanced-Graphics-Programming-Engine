@@ -248,6 +248,21 @@ void SetAttributes(Program& program)
     }
 }
 
+void InitEntitiesInBulk(App* app, std::vector<glm::vec3> positions, u32 textureId, float scaleFactor)
+{
+    int nr_entities = positions.size();
+    for (int i = 0; i < nr_entities; ++i)
+    {
+        Entity patrick = Entity(
+            positions[i],           // Position
+            glm::vec3(scaleFactor), // Scale factor
+            textureId               // Model index
+        );
+
+        app->entities.push_back(patrick);
+    }
+}
+
 void Init(App* app)
 {
     // Get OpenGL Information
@@ -309,6 +324,7 @@ void Init(App* app)
     u32 patrickTexIdx = LoadModel(app, "Models/Patrick/Patrick.obj");
     app->planeId = LoadModel(app, "Models/Wall/plane.obj");
     app->sphereId = LoadModel(app, "Models/Sphere/sphere.obj");
+    u32 cyborgId = LoadModel(app, "Models/cyborg/cyborg.obj");
 
     // Attributes Program 
     int attributeCount;
@@ -329,68 +345,73 @@ void Init(App* app)
 
     // Gameobjects - Entities and lights
     {
-        Entity ground = Entity(
-            glm::vec3(0.0f, -2.0f, 0.0f),  // Position
-            glm::vec3(1.0f),              // Scale factor
-            app->planeId                  // Model index
-            );
+        std::vector<glm::vec3> groundPos = { glm::vec3(0.0f, -2.0f, 0.0f) };
 
-        Entity patrick1 = Entity(
-            glm::vec3(10.0f, 1.5f, 0.0f), // Position
-            glm::vec3(1.0f),              // Scale factor
-            patrickTexIdx                 // Model index
-            );
+        // Add patricks
+        std::vector<glm::vec3> patricksPos = {
+            glm::vec3(2.0f, 1.5f, 15.0f),
+            glm::vec3(7.0f, 1.5f, 22.0f),
+            glm::vec3(3.0f, 1.5f, 30.0f),
+            glm::vec3(-5.0f, 1.5f, 30.0f),
+            glm::vec3(-16.0f, 1.5f, -15.0f),
+        };
 
-        Entity patrick2 = Entity(
-            glm::vec3(2.5f, 1.5f, 0.0f),  // Position
-            glm::vec3(1.0f),              // Scale factor
-            patrickTexIdx                 // Model index
-            );
-
-        Entity patrick3 = Entity(
-            glm::vec3(0.0f, 1.5f, -2.0f), // Position
-            glm::vec3(1.0f),              // Scale factor
-            patrickTexIdx                 // Model index
-            );
-
-        app->entities.push_back(ground);
-        app->entities.push_back(patrick1);
-        app->entities.push_back(patrick2);
-        app->entities.push_back(patrick3);
-               
-        const int nr_lights = 3;
-
-        for (int i = 0; i < nr_lights; i++)
+        // Add cyborgs
+        std::vector<glm::vec3> cyborgsPos =
         {
-            Light pointLight = Light(
-                LightType::LightType_Point,
-                glm::vec3(1.0f, 0.5f, 0.0f),   // Color
-                glm::vec3(0.0f, -1.0, -1.0f),  // Direction
-                glm::vec3(-i, i, i),         // Position
-                5U                            // Intensity
-            );
+            glm::vec3(1.0f, -2.0f, 3.0f),
+            glm::vec3(15.0f, -2.0f, 3.0f),
+            glm::vec3(10.0f, -2.0f, 3.0f),
+            glm::vec3(1.0f, -2.0f, 30.0f),
+            glm::vec3(6.0f, -2.0f, 15.0f),
+        };
 
-            app->lights.push_back(pointLight);
-        }
-
-        /*Light directionalLight1 = Light(
-            LightType::LightType_Directional,
-            glm::vec3(0.5f, 0.5f, 0.5f),   // Color
-            glm::vec3(0.0f, -0.5, 0.5f),   // Direction
-            glm::vec3(0.1f, 20.0f, 0.1f),  // Position
-            10U                             // Intensity
-            );
-        Light directionalLight2 = Light(
-            LightType::LightType_Directional,
-            glm::vec3(0.5f, 0.5f, 0.5f),   // Color
-            glm::vec3(0.5f, -0.2, 0.5f),   // Direction
-            glm::vec3(0.1f, 20.0f, 0.1f),  // Position
-            10U                             // Intensity
-            );
-        app->lights.push_back(directionalLight1);
-        app->lights.push_back(directionalLight2);*/
+        InitEntitiesInBulk(app, groundPos, app->planeId, 1.0f);
+        InitEntitiesInBulk(app, patricksPos, patrickTexIdx, 1.0f);
+        InitEntitiesInBulk(app, cyborgsPos, cyborgId, 2.0f);
     }
 
+    // Add lights
+    const u32 nr_lights = 7;
+    glm::vec3 pointLightsPos[nr_lights] =
+    {
+        glm::vec3(3.0f, 1.0f, 8.0f),
+        glm::vec3(12.0f, 3.0f, 3.0f),
+        glm::vec3(16.0f, 5.0f, 4.0f),
+        glm::vec3(27.0f, 10.0f, 30.0f),
+        glm::vec3(2.0f, 9.0f, 17.0f),
+    };
+    
+    for (int i = 0; i < nr_lights; i++)
+    {
+        Light pointLight = Light(
+            LightType::LightType_Point,
+            glm::vec3(1.0f, 0.5f, 0.0f),   // Color
+            glm::vec3(0.0f, -1.0, -1.0f),  // Direction
+            pointLightsPos[i],             // Position
+            10U                            // Intensity
+        );
+
+        app->lights.push_back(pointLight);
+    }
+
+    /*Light directionalLight1 = Light(
+        LightType::LightType_Directional,
+        glm::vec3(0.5f, 0.5f, 0.5f),   // Color
+        glm::vec3(0.0f, -0.5, 0.5f),   // Direction
+        glm::vec3(0.1f, 20.0f, 0.1f),  // Position
+        10U                             // Intensity
+        );
+    Light directionalLight2 = Light(
+        LightType::LightType_Directional,
+        glm::vec3(0.5f, 0.5f, 0.5f),   // Color
+        glm::vec3(0.5f, -0.2, 0.5f),   // Direction
+        glm::vec3(0.1f, 20.0f, 0.1f),  // Position
+        10U                             // Intensity
+        );
+    app->lights.push_back(directionalLight1);
+    app->lights.push_back(directionalLight2);*/
+    
     // Local parameters
     glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
     glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBufferAlignment);

@@ -147,13 +147,6 @@ struct Light
     unsigned int intensity; // From 0 to 100
 };
 
-struct Plane
-{
-    u32 programID;
-    unsigned int shaderProgram;
-    unsigned int VAO;
-};
-
 struct App
 {
     // Loop
@@ -196,8 +189,6 @@ struct App
     // model id
     u32 planeId;
     u32 sphereId;
-
-    Plane plane;
 
     // OpenGL info
     GLInfo glInfo;
@@ -252,3 +243,5 @@ u32 LoadTexture2D(App* app, const char* filepath);
 GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
 
 void SetAttributes(Program& program);
+
+void InitEntitiesInBulk(App* app, std::vector<glm::vec3> positions, u32 textureId, float scaleFactor = 1.0f);
