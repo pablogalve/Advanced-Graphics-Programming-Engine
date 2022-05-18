@@ -8,7 +8,7 @@ struct Camera {
     Camera();
     Camera(glm::vec3 pos, glm::vec3 rot);
 
-    void Update(App* app);
+    void HandleInput(App* app);
     void RecalculateViewMatrix();
 
     // Camera movement

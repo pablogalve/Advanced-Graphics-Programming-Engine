@@ -463,7 +463,7 @@ void Gui(App* app)
 void Update(App* app)
 {
     // You can handle app->input keyboard/mouse here
-    app->camera.Update(app);
+    app->camera.HandleInput(app);
 
     // Global parameters
     MapBuffer(app->globalBuffer, GL_WRITE_ONLY);
