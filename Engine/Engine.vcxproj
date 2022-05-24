@@ -126,6 +126,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <LibraryPath>E:\Github\Advanced-Graphics-Programming-Engine\Engine\ThirdParty\glfw\lib-vc2019;E:\Github\Advanced-Graphics-Programming-Engine\Engine\ThirdParty\Assimp\lib\windows;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -178,7 +179,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\jdiaz\Projects\AGP\Engine\ThirdParty\glfw\include;C:\Users\jdiaz\Projects\AGP\Engine\ThirdParty\glad\include;C:\Users\jdiaz\Projects\AGP\Engine\ThirdParty\glm\include;C:\Users\jdiaz\Projects\AGP\Engine\ThirdParty\imgui-docking;C:\Users\jdiaz\Projects\AGP\Engine\ThirdParty\stb;C:\Users\jdiaz\Projects\AGP\Engine\ThirdParty\Assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Github\Advanced-Graphics-Programming-Engine\Engine\ThirdParty\glfw\include\GLFW;E:\Github\Advanced-Graphics-Programming-Engine\Engine\ThirdParty\glad\include;E:\Github\Advanced-Graphics-Programming-Engine\Engine\ThirdParty\glm\include;E:\Github\Advanced-Graphics-Programming-Engine\Engine\ThirdParty\imgui-docking;E:\Github\Advanced-Graphics-Programming-Engine\Engine\ThirdParty\stb;E:\Github\Advanced-Graphics-Programming-Engine\Engine\ThirdParty\Assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

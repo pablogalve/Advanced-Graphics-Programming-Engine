@@ -23,10 +23,16 @@ struct Camera {
 
     glm::vec3 position;
     glm::vec3 target;
+    glm::vec3 direction;
+
     glm::mat4 projection; // Transform from view coordinates to clip coordinates
     glm::mat4 viewMatrix; // Transform from world coordinates to camera/eye/view coordinates
 
     // Rotation
     float yaw;
     float pitch;
+
+    bool orbiting;
+    float radius;
+    float rotationSpeed;
 };

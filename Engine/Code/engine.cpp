@@ -434,7 +434,7 @@ void Gui(App* app)
     ImGui::Text("Camera");
 
     ImGui::Text("Movement speed");
-    ImGui::DragFloat("X", &app->camera.speed);
+    ImGui::DragFloat("Speed", &app->camera.speed, 0.01f, 0.1f, 2.0f);
 
     ImGui::Text("Position");
     ImGui::PushItemWidth(100);
@@ -451,6 +451,12 @@ void Gui(App* app)
     ImGui::SameLine();
     ImGui::DragFloat("Pitch", &app->camera.pitch);
     ImGui::PopItemWidth();
+
+    ImGui::Separator();
+    ImGui::Text("Orbiting around a pivot point");
+    ImGui::Checkbox("Orbital camera", &app->camera.orbiting);
+    ImGui::DragFloat("Radius", &app->camera.radius);
+    ImGui::DragFloat("Rotation speed", &app->camera.rotationSpeed, 0.01f, -0.5f, 0.5f);
 
     // Render target
     ImGui::Separator();
