@@ -64,21 +64,23 @@ void Camera::RecalculateViewMatrix()
 
 		viewMatrix = glm::lookAt(
 			glm::vec3(camX, 0.0f, camZ), 
-			glm::vec3(0.0f, 0.0f, 0.0f), 
+			target, 
 			glm::vec3(0.0f, 1.0f, 0.0f));
 	}
 	else
 	{
-		glm::vec3 orientation;
-		orientation.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-		orientation.y = sin(glm::radians(pitch));
-		orientation.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+		direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+		direction.y = sin(glm::radians(pitch));
+		direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 
 		// Recalculate axis
-		forward = glm::normalize(orientation);
+		forward = glm::normalize(direction);
 		right = glm::normalize(glm::cross(glm::vec3(0, 1, 0), forward));
 		up = glm::cross(forward, right);
 
-		viewMatrix = glm::lookAt(position, position + forward, up);
+		viewMatrix = glm::lookAt(
+			position, 
+			position + forward, 
+			up);
 	}	
 }

@@ -457,6 +457,14 @@ void Gui(App* app)
     ImGui::Checkbox("Orbital camera", &app->camera.orbiting);
     ImGui::DragFloat("Radius", &app->camera.radius);
     ImGui::DragFloat("Rotation speed", &app->camera.rotationSpeed, 0.01f, -0.5f, 0.5f);
+    ImGui::Text("Camera Target");
+    ImGui::PushItemWidth(100);
+    ImGui::DragFloat("Xt", &app->camera.target.x);
+    ImGui::SameLine();
+    ImGui::DragFloat("Yt", &app->camera.target.y);
+    ImGui::SameLine();
+    ImGui::DragFloat("Zt", &app->camera.target.z);
+    ImGui::PopItemWidth();
 
     // Render target
     ImGui::Separator();

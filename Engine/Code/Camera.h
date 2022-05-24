@@ -21,8 +21,7 @@ struct Camera {
     float znear;
     float zfar;
 
-    glm::vec3 position;
-    glm::vec3 target;
+    glm::vec3 position;    
     glm::vec3 direction;
 
     glm::mat4 projection; // Transform from view coordinates to clip coordinates
@@ -32,7 +31,9 @@ struct Camera {
     float yaw;
     float pitch;
 
+    // Orbital camera
     bool orbiting;
+    glm::vec3 target;
     float radius;
     float rotationSpeed;
 };
