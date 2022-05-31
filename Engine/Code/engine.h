@@ -147,6 +147,15 @@ struct Light
     unsigned int intensity; // From 0 to 100
 };
 
+struct Skybox
+{
+    u32 shaderId;
+    u32 cubemapTexture;
+    std::vector<float> vertices;
+    unsigned int VAO, VBO;
+    std::vector<std::string> faces;
+};
+
 struct App
 {
     // Loop
@@ -219,6 +228,8 @@ struct App
     ShadingBuffer shadingFbo;
 
     RenderTargetType renderTarget = RenderTargetType::DEFAULT;
+
+    Skybox skybox;
 };
 
 void Init(App* app);
@@ -230,6 +241,11 @@ void Update(App* app);
 void Render(App* app);
 
 void RenderQuad(App* app);
+
+void InitSkybox(App* app);
+void RenderSkybox(App* app);
+unsigned int loadCubemap(std::vector<std::string> faces);
+u32 loadTexture(char const* path);
 
 u32 LoadTexture2D(App* app, const char* filepath);
 

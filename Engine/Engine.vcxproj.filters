@@ -139,5 +139,11 @@
     <None Include="WorkingDir\show_textured_mesh.glsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="WorkingDir\skybox_shader.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="WorkingDir\cubemaps_shader.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
