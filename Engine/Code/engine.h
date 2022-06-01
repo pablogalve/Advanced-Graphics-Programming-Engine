@@ -151,8 +151,9 @@ struct Skybox
 {
     u32 shaderId;
     u32 cubemapTexture;
-    std::vector<float> vertices;
-    unsigned int VAO, VBO;
+    std::vector<float> skyboxVertices;
+    std::vector<u32> skyboxIndices;
+    unsigned int VAO, VBO, EBO;
     std::vector<std::string> faces;
 };
 
