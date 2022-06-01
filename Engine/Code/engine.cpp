@@ -300,6 +300,10 @@ void Init(App* app)
     Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
     SetAttributes(texturedMeshProgram);
 
+    InitSkybox(app);
+    Program& skyboxProgram = app->programs[app->skybox.shaderId];
+    SetAttributes(skyboxProgram);
+
     // Camera    
     app->camera = Camera(
         glm::vec3(0.0f, 4.0f, 15.0f),          // Position
@@ -705,8 +709,10 @@ void Render(App* app)
     {
         glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(app->renderTarget));
     }
-
+    
     RenderQuad(app);
+
+    RenderSkybox(app);
 
     glBindTexture(GL_TEXTURE_2D, 0);
     glUseProgram(0);
@@ -823,6 +829,11 @@ void InitSkybox(App* app)
 
 void RenderSkybox(App* app)
 {
+    if (app->enableDebugGroup)
+    {
+        glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Skybox");
+    }
+
     // draw skybox as last
     glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
     //skyboxShader.use();
@@ -844,6 +855,11 @@ void RenderSkybox(App* app)
     glBindVertexArray(0);
 
     glDepthFunc(GL_LESS); // set depth function back to default
+
+    if (app->enableDebugGroup)
+    {
+        glPopDebugGroup();
+    }
 }
 
 unsigned int loadCubemap(std::vector<std::string> faces)
@@ -851,12 +867,6 @@ unsigned int loadCubemap(std::vector<std::string> faces)
     unsigned int textureID;
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
-
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
     int width, height, nrChannels;
     for (unsigned int i = 0; i < faces.size(); i++)
@@ -882,6 +892,12 @@ unsigned int loadCubemap(std::vector<std::string> faces)
             std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
             stbi_image_free(data);
         }
+
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);        
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     }    
 
     return textureID;
