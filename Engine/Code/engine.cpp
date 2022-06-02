@@ -545,8 +545,10 @@ void Render(App* app)
         glEnable(GL_DEPTH_TEST);
     }
 
+    RenderSkybox(app);
+
     // Render object
-    {
+    /* {
         app->gFbo.Bind();
 
         Program& texturedMeshProgram = app->programs[app->geometryPassShaderId];
@@ -715,7 +717,7 @@ void Render(App* app)
     RenderSkybox(app);
 
     glBindTexture(GL_TEXTURE_2D, 0);
-    glUseProgram(0);
+    glUseProgram(0);*/
 }
 
 void RenderQuad(App* app)
@@ -763,40 +765,8 @@ void RenderQuad(App* app)
 void InitSkybox(App* app)
 {
     app->skybox.shaderId = LoadProgram(app, "skybox_shader.glsl", "SKYBOX_SHADER");
-    glUniform1i(glGetUniformLocation(app->skybox.shaderId, "skybox"), 0);
-
-    app->skybox.skyboxVertices = {
-        // Coordinates    
-        -1.0f, -1.0f,  1.0f,//       7--------6
-         1.0f, -1.0f,  1.0f,//      /|       /|
-         1.0f, -1.0f, -1.0f,//     4--------5 |
-        -1.0f, -1.0f, -1.0f,//     | |      | |
-        -1.0f,  1.0f,  1.0f,//     | 3------|-2
-         1.0f,  1.0f,  1.0f,//     |/       |/
-         1.0f,  1.0f, -1.0f,//     0--------1
-        -1.0f,  1.0f, -1.0f,
-    };
-
-    app->skybox.skyboxIndices = {
-        // Right
-        1, 2, 6,
-        6, 5, 1,
-        // Left
-        0, 4, 7,
-        7, 3, 0,
-        // Top
-        4, 5, 6,
-        6, 7, 4,
-        // Bottom
-        0, 3, 2,
-        2, 1, 0,
-        // Back
-        0, 1, 5,
-        5, 4, 0,
-        // Front
-        3, 7, 6,
-        6, 2, 3
-    };
+    Program& skyboxProgram = app->programs[app->skybox.shaderId];
+    glUniform1i(glGetUniformLocation(skyboxProgram.handle, "skybox"), 0);
 
     // skybox VAO
     glGenVertexArrays(1, &app->skybox.VAO);
@@ -804,27 +774,17 @@ void InitSkybox(App* app)
     glGenBuffers(1, &app->skybox.EBO);
     glBindVertexArray(app->skybox.VAO);
     glBindBuffer(GL_ARRAY_BUFFER, app->skybox.VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(app->skybox.skyboxVertices), &app->skybox.skyboxVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(app->skybox.skyboxVertices), &app->skybox.skyboxVertices[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->skybox.EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(app->skybox.skyboxIndices), &app->skybox.skyboxIndices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(app->skybox.skyboxIndices), &app->skybox.skyboxIndices[0], GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-    // load textures
-    // -------------
-    app->skybox.faces =
-    {
-        "Textures/skybox/right.jpg",
-        "Textures/skybox/left.jpg",
-        "Textures/skybox/top.jpg",
-        "Textures/skybox/bottom.jpg",
-        "Textures/skybox/front.jpg",
-        "Textures/skybox/back.jpg",
-    };
-    app->skybox.cubemapTexture = loadCubemap(app->skybox.faces);
+    
+    app->skybox.cubemapTextureId = loadCubemap(app->skybox.faces);
 }
 
 void RenderSkybox(App* app)
@@ -844,13 +804,13 @@ void RenderSkybox(App* app)
     glm::mat4 projection = glm::mat4(1.0f);
     view = glm::mat4(glm::mat3(glm::lookAt(app->camera.position, app->camera.position + app->camera.direction, app->camera.up)));
     projection = glm::perspective(glm::radians(45.0f), (float)app->displaySize.x / app->displaySize.y, 0.1f, 100.0f);
-    glUniformMatrix4fv(glGetUniformLocation(app->skybox.shaderId, "view"), 1, GL_FALSE, glm::value_ptr(view));
-    glUniformMatrix4fv(glGetUniformLocation(app->skybox.shaderId, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(skyboxProgram.handle, "view"), 1, GL_FALSE, (GLfloat*)&app->camera.viewMatrix);
+    glUniformMatrix4fv(glGetUniformLocation(skyboxProgram.handle, "projection"), 1, GL_FALSE, (GLfloat*)&app->camera.projection);
 
     // skybox cube
     glBindVertexArray(app->skybox.VAO);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, app->skybox.cubemapTexture);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, app->skybox.cubemapTextureId);
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
