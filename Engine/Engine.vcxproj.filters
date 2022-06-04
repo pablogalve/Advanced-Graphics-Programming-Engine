@@ -66,6 +66,9 @@
     <ClCompile Include="Code\framebuffer.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
+    <ClCompile Include="Code\Shader.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\imgui-docking\imconfig.h">
@@ -122,6 +125,9 @@
     <ClInclude Include="Code\framebuffer.h">
       <Filter>Engine</Filter>
     </ClInclude>
+    <ClInclude Include="Code\Shader.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="WorkingDir\geometry_pass_shader.glsl">
@@ -143,6 +149,18 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="WorkingDir\cubemaps_shader.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="WorkingDir\default.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="WorkingDir\default.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="WorkingDir\skybox.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="WorkingDir\skybox.vert">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

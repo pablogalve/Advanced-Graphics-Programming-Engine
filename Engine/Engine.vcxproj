@@ -26,6 +26,7 @@
     <ClCompile Include="Code\entity.cpp" />
     <ClCompile Include="Code\framebuffer.cpp" />
     <ClCompile Include="Code\platform.cpp" />
+    <ClCompile Include="Code\Shader.cpp" />
     <ClCompile Include="ThirdParty\glad\include\glad\glad.c" />
     <ClCompile Include="ThirdParty\imgui-docking\imgui.cpp" />
     <ClCompile Include="ThirdParty\imgui-docking\imgui_demo.cpp" />
@@ -44,6 +45,7 @@
     <ClInclude Include="Code\entity.h" />
     <ClInclude Include="Code\framebuffer.h" />
     <ClInclude Include="Code\platform.h" />
+    <ClInclude Include="Code\Shader.h" />
     <ClInclude Include="ThirdParty\glad\include\glad\glad.h" />
     <ClInclude Include="ThirdParty\glad\include\glad\khrplatform.h" />
     <ClInclude Include="ThirdParty\imgui-docking\imconfig.h" />
@@ -61,6 +63,8 @@
     <None Include="WorkingDir\geometry_pass_shader.glsl" />
     <None Include="WorkingDir\lights_shader.glsl" />
     <None Include="WorkingDir\show_textured_mesh.glsl" />
+    <None Include="WorkingDir\skybox.frag" />
+    <None Include="WorkingDir\skybox.vert" />
     <None Include="WorkingDir\skybox_shader.glsl" />
     <None Include="WorkingDir\textured_geometry_shader.glsl" />
     <None Include="WorkingDir\shading_pass_shader.glsl" />

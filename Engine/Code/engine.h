@@ -14,6 +14,7 @@
 #include "buffer_management.h"
 #include "entity.h"
 #include "framebuffer.h"
+#include "Shader.h"
 
 struct Buffer
 {
@@ -149,9 +150,9 @@ struct Light
 
 struct Skybox
 {
-    u32 shaderId;
+    Shader shader;
     u32 cubemapTextureId;
-    float skyboxVertices[24] = 
+    float vertices[24] = 
     {        
         // Coordinates    
         -1.0f, -1.0f,  1.0f,//       7--------6
@@ -161,10 +162,10 @@ struct Skybox
         -1.0f,  1.0f,  1.0f,//     | 3------|-2
          1.0f,  1.0f,  1.0f,//     |/       |/
          1.0f,  1.0f, -1.0f,//     0--------1
-        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f
         
     };
-    unsigned int skyboxIndices[36] = 
+    unsigned int indices[36] = 
     {
         // Right
         1, 2, 6,

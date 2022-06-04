@@ -272,7 +272,7 @@ void Init(App* app)
     app->glInfo.GLSLversion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
        
     // Program 
-    app->texturedGeometryProgramIdx = LoadProgram(app, "textured_geometry_shader.glsl", "TEXTURED_GEOMETRY");
+    /*app->texturedGeometryProgramIdx = LoadProgram(app, "textured_geometry_shader.glsl", "TEXTURED_GEOMETRY");
     Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
     app->programUniformTexture = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
 
@@ -298,11 +298,10 @@ void Init(App* app)
 
     app->texturedMeshProgramIdx = LoadProgram(app, "show_textured_mesh.glsl", "SHOW_TEXTURED_MESH");
     Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
-    SetAttributes(texturedMeshProgram);
+    SetAttributes(texturedMeshProgram);*/
 
     InitSkybox(app);
-    Program& skyboxProgram = app->programs[app->skybox.shaderId];
-    SetAttributes(skyboxProgram);
+    
 
     // Camera    
     app->camera = Camera(
@@ -318,7 +317,7 @@ void Init(App* app)
     app->camera.viewMatrix = glm::lookAt(app->camera.position, app->camera.target, glm::vec3(0.0f, 1.0f, 0.0f));
             
     // Init models
-    u32 patrickTexIdx = LoadModel(app, "Models/Patrick/Patrick.obj");
+    /*u32 patrickTexIdx = LoadModel(app, "Models/Patrick/Patrick.obj");
     app->planeId = LoadModel(app, "Models/Wall/plane.obj");
     app->sphereId = LoadModel(app, "Models/Sphere/sphere.obj");
     u32 cyborgId = LoadModel(app, "Models/Cyborg/cyborg.obj");
@@ -355,10 +354,10 @@ void Init(App* app)
         InitEntitiesInBulk(app, cyborgsPos, cyborgId, 2.0f);
         InitEntitiesInBulk(app, marsPos, planetMarsId, 37.5f);
         InitEntitiesInBulk(app, woodenCartPos, woodenCartId, 3.0f);
-    }
+    }*/
 
     // Add lights
-    const u32 nr_lights = 15;
+    /*const u32 nr_lights = 15;
     glm::vec3 pointLightsPos[nr_lights] =
     {
         glm::vec3(-100.0f, -50.0f, -10.0f),  // Around planet surfice
@@ -406,9 +405,9 @@ void Init(App* app)
         );
     app->lights.push_back(directionalLight1);
     app->lights.push_back(directionalLight2);
-    
+    */
     // Local parameters
-    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
+    /*glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
     glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBufferAlignment);
     app->uniformBuffer = CreateConstantBuffer(app->maxUniformBufferSize);
 
@@ -419,7 +418,7 @@ void Init(App* app)
 
     // FBO
     app->gFbo.Initialize(app->displaySize.x, app->displaySize.y);
-    app->shadingFbo.Initialize(app->displaySize.x, app->displaySize.y);
+    app->shadingFbo.Initialize(app->displaySize.x, app->displaySize.y);*/
 }
 
 void Gui(App* app)
@@ -492,7 +491,7 @@ void Update(App* app)
     app->camera.HandleInput(app);
 
     // Global parameters
-    MapBuffer(app->globalBuffer, GL_WRITE_ONLY);
+    /*MapBuffer(app->globalBuffer, GL_WRITE_ONLY);
     app->globalParamsOffset = app->globalBuffer.head;
 
     PushVec3(app->globalBuffer, app->camera.position);
@@ -532,7 +531,7 @@ void Update(App* app)
         app->entities[i].localParamsSize = app->uniformBuffer.head - app->entities[i].localParamsOffset;
     }
 
-    UnmapBuffer(app->uniformBuffer);
+    UnmapBuffer(app->uniformBuffer);*/
 }
 
 void Render(App* app)
@@ -545,6 +544,7 @@ void Render(App* app)
         glEnable(GL_DEPTH_TEST);
     }
 
+    // Render skybox
     RenderSkybox(app);
 
     // Render object
@@ -598,8 +598,8 @@ void Render(App* app)
 
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindVertexArray(0);
-    glUseProgram(0);
-
+    glUseProgram(0);*/
+    /*
     // Shading pass
 
     glDisable(GL_DEPTH_TEST);
@@ -628,8 +628,8 @@ void Render(App* app)
     glUniform1i(app->programShadingPassUniformTextureDepth, 3);
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(RenderTargetType::DEPTH));
-
-    RenderQuad(app);
+    
+    RenderQuad(app);    
 
     app->shadingFbo.Unbind();
 
@@ -712,12 +712,12 @@ void Render(App* app)
         glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(app->renderTarget));
     }
     
-    RenderQuad(app);
-
-    RenderSkybox(app);
+    RenderQuad(app);    
 
     glBindTexture(GL_TEXTURE_2D, 0);
     glUseProgram(0);*/
+
+    //RenderSkybox(app);    
 }
 
 void RenderQuad(App* app)
@@ -764,26 +764,30 @@ void RenderQuad(App* app)
 
 void InitSkybox(App* app)
 {
-    app->skybox.shaderId = LoadProgram(app, "skybox_shader.glsl", "SKYBOX_SHADER");
-    Program& skyboxProgram = app->programs[app->skybox.shaderId];
-    glUniform1i(glGetUniformLocation(skyboxProgram.handle, "skybox"), 0);
+    app->skybox.shader = Shader("skybox.vert", "skybox.frag");
+    app->skybox.shader.Activate();
+    glUniform1i(glGetUniformLocation(app->skybox.shader.ID, "skybox"), 0);
+    
+    glEnable(GL_DEPTH_TEST); // Enables the Depth Buffer    
+    glEnable(GL_CULL_FACE); // Enables Cull Facing    
+    glCullFace(GL_FRONT); // Keeps front faces    
+    glFrontFace(GL_CCW); // Uses counter clock-wise standard
 
-    // skybox VAO
+    // Skybox VAO, VBO and EBO
     glGenVertexArrays(1, &app->skybox.VAO);
     glGenBuffers(1, &app->skybox.VBO);
     glGenBuffers(1, &app->skybox.EBO);
     glBindVertexArray(app->skybox.VAO);
     glBindBuffer(GL_ARRAY_BUFFER, app->skybox.VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(app->skybox.skyboxVertices), &app->skybox.skyboxVertices[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(app->skybox.vertices), &app->skybox.vertices[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->skybox.EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(app->skybox.skyboxIndices), &app->skybox.skyboxIndices[0], GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(app->skybox.indices), &app->skybox.indices[0], GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-    
+        
     app->skybox.cubemapTextureId = loadCubemap(app->skybox.faces);
 }
 
@@ -794,27 +798,29 @@ void RenderSkybox(App* app)
         glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Skybox");
     }
 
-    // draw skybox as last
-    glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
-    //skyboxShader.use();
-    Program& skyboxProgram = app->programs[app->skybox.shaderId];
-    glUseProgram(skyboxProgram.handle);
+    // Since the cubemap will always have a depth of 1.0, we need that equal sign so it doesn't get discarded
+    glDepthFunc(GL_LEQUAL);
 
-    glm::mat4 view = glm::mat4(1.0f); // remove translation from the view matrix
+    app->skybox.shader.Activate();
+    glm::mat4 view = glm::mat4(1.0f);
     glm::mat4 projection = glm::mat4(1.0f);
+    // We make the mat4 into a mat3 and then a mat4 again in order to get rid of the last row and column
+    // The last row and column affect the translation of the skybox (which we don't want to affect)
     view = glm::mat4(glm::mat3(glm::lookAt(app->camera.position, app->camera.position + app->camera.direction, app->camera.up)));
     projection = glm::perspective(glm::radians(45.0f), (float)app->displaySize.x / app->displaySize.y, 0.1f, 100.0f);
-    glUniformMatrix4fv(glGetUniformLocation(skyboxProgram.handle, "view"), 1, GL_FALSE, (GLfloat*)&app->camera.viewMatrix);
-    glUniformMatrix4fv(glGetUniformLocation(skyboxProgram.handle, "projection"), 1, GL_FALSE, (GLfloat*)&app->camera.projection);
+    glUniformMatrix4fv(glGetUniformLocation(app->skybox.shader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(glGetUniformLocation(app->skybox.shader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
-    // skybox cube
+    // Draws the cubemap as the last object so we can save a bit of performance by discarding all fragments
+    // where an object is present (a depth of 1.0f will always fail against any object's depth value)
     glBindVertexArray(app->skybox.VAO);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, app->skybox.cubemapTextureId);
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
-    glDepthFunc(GL_LESS); // set depth function back to default
+    // Switch back to the normal depth function
+    glDepthFunc(GL_LESS);
 
     if (app->enableDebugGroup)
     {
@@ -827,6 +833,13 @@ unsigned int loadCubemap(std::vector<std::string> faces)
     unsigned int textureID;
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    // These are very important to prevent seams
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
     int width, height, nrChannels;
     for (unsigned int i = 0; i < faces.size(); i++)
@@ -844,7 +857,8 @@ unsigned int loadCubemap(std::vector<std::string> faces)
                 0, 
                 GL_RGB, 
                 GL_UNSIGNED_BYTE, 
-                data);
+                data
+            );
             stbi_image_free(data);
         }
         else
@@ -852,12 +866,6 @@ unsigned int loadCubemap(std::vector<std::string> faces)
             std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
             stbi_image_free(data);
         }
-
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);        
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     }    
 
     return textureID;
