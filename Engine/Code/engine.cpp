@@ -942,6 +942,8 @@ void passWaterScene(App* app,Camera* camera, GLenum colorAttachment, WaterSceneP
     //shaderprogram
     Program& waterShaderProgram = app->programs[app->waterPassShaderID];
     glUseProgram(waterShaderProgram.handle);
+
+    //Pass uniformvalues to the shader viewmatrix, projection, eyeworldspace...
 }
 
 unsigned int loadCubemap(std::vector<std::string> faces)
