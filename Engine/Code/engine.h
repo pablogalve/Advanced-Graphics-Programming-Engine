@@ -302,7 +302,7 @@ unsigned int loadCubemap(std::vector<std::string> faces);
 
 //Water Shader
 void InitWaterShader(App* app);
-void passWaterScene(Camera* camera, GLenum colorAttachment, WaterScenePart part);
+void PassWaterScene(App* app, Camera* camera, GLenum colorAttachment, WaterScenePart part);
 
 //Engine stuff
 u32 loadTexture(char const* path);

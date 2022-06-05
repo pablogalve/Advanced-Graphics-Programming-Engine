@@ -740,7 +740,7 @@ void Render(App* app)
         reflectionCamera.viewportHeight = app->displaySize.y;
         //matrix
 
-        passWaterScene(&reflectionCamera, GL_COLOR_ATTACHMENT0, WaterScenePart::Reflection);
+        PassWaterScene(app, &reflectionCamera, GL_COLOR_ATTACHMENT0, WaterScenePart::Reflection);
         //passBackground(&reflectionCamera, GL_COLOR_ATTACHMENT0);----> means rendering everything else? no function in ppt;
 
         //app->fboReflection->FreeMemory(); UNBIND IN INIT
@@ -754,7 +754,7 @@ void Render(App* app)
         refractionCamera.viewportWidth = app->displaySize.y;
         //matrix
 
-        passWaterScene(&refractionCamera, GL_COLOR_ATTACHMENT0, WaterScenePart::Refraction);
+        PassWaterScene(app, &refractionCamera, GL_COLOR_ATTACHMENT0, WaterScenePart::Refraction);
 
         //app->fboRefraction->FreeMemory();
         #pragma endregion REFRACTION_PASS
@@ -930,7 +930,7 @@ void InitWaterShader(App* app) {
     glDeleteFramebuffers(1, &app->fboRefraction);
 }
 
-void passWaterScene(App* app,Camera* camera, GLenum colorAttachment, WaterScenePart part) {
+void PassWaterScene(App* app, Camera* camera, GLenum colorAttachment, WaterScenePart part) {
 
     glDrawBuffer(colorAttachment);
     glEnable(GL_DEPTH_TEST);
