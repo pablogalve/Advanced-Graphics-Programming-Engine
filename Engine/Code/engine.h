@@ -270,17 +270,17 @@ struct App
 
     bool enableDebugGroup = true;
 
-    // FBO
-    GBuffer gFbo;
-    ShadingBuffer shadingFbo;
 
     RenderTargetType renderTarget = RenderTargetType::DEFAULT;
 
+    //Skybox Shader
     Skybox skybox;
 
-    //Water shader
-    GBuffer *fboReflection;
-    GBuffer *fboRefraction;
+    //Water Shader
+    GLuint fboReflection;
+    GLuint fboRefraction;
+
+    GLuint waterPassShaderID;
 
     bool renderWater;
 };

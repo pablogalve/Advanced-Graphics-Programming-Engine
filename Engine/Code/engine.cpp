@@ -301,6 +301,7 @@ void Init(App* app)
     SetAttributes(texturedMeshProgram);*/
 
     InitSkybox(app);
+    InitWaterShader(app);
     
 
     // Camera    
@@ -727,7 +728,9 @@ void Render(App* app)
     if (app->renderWater) {
 
         #pragma region REFLECTION_PASS
-        app->fboReflection->Bind();
+
+        
+        //app->fboReflection->Bind(); BIND IN INIT
 
         Camera reflectionCamera = app->camera;
 
@@ -740,11 +743,11 @@ void Render(App* app)
         passWaterScene(&reflectionCamera, GL_COLOR_ATTACHMENT0, WaterScenePart::Reflection);
         //passBackground(&reflectionCamera, GL_COLOR_ATTACHMENT0);----> means rendering everything else? no function in ppt;
 
-        app->fboReflection->FreeMemory();
+        //app->fboReflection->FreeMemory(); UNBIND IN INIT
         #pragma endregion REFLECTION_PASS
 
         #pragma region REFRACTION_PASS
-        app->fboRefraction->Bind();
+        //app->fboRefraction->Bind();
 
         Camera refractionCamera = app->camera;
         refractionCamera.viewportWidth = app->displaySize.x;
@@ -753,7 +756,7 @@ void Render(App* app)
 
         passWaterScene(&refractionCamera, GL_COLOR_ATTACHMENT0, WaterScenePart::Refraction);
 
-        app->fboRefraction->FreeMemory();
+        //app->fboRefraction->FreeMemory();
         #pragma endregion REFRACTION_PASS
      
     }
@@ -869,8 +872,10 @@ void RenderSkybox(App* app)
 
 void InitWaterShader(App* app) {
 
-    app->fboReflection = nullptr;
-    app->fboRefraction = nullptr;
+    app->waterPassShaderID = LoadProgram(app, "water_shader.glsl", "WATER_PASS_SHADER");
+
+    app->fboReflection = 0;
+    app->fboRefraction = 0;
 
     GLuint rtReflection = 0;
     glGenTextures(1, &rtReflection);
@@ -908,10 +913,24 @@ void InitWaterShader(App* app) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, app->displaySize.x, app->displaySize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
-    app->fboReflection->Bind();
+    //FBO REFLECTION BIND->COLOR->DEPTH->RELEASE
+    glGenFramebuffers(1, &app->fboReflection);
+    glBindFramebuffer(GL_FRAMEBUFFER, app->fboReflection);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rtReflection, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, rtReflectionDepth, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDeleteFramebuffers(1, &app->fboReflection);
+
+    //FBO REFRACTION BIND->COLOR->DEPTH->RELEASE
+    glGenFramebuffers(1, &app->fboRefraction);
+    glBindFramebuffer(GL_FRAMEBUFFER, app->fboRefraction);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rtRefraction, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, rtRefractionDepth, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDeleteFramebuffers(1, &app->fboRefraction);
 }
 
-void passWaterScene(Camera* camera, GLenum colorAttachment, WaterScenePart part) {
+void passWaterScene(App* app,Camera* camera, GLenum colorAttachment, WaterScenePart part) {
 
     glDrawBuffer(colorAttachment);
     glEnable(GL_DEPTH_TEST);
@@ -921,6 +940,8 @@ void passWaterScene(Camera* camera, GLenum colorAttachment, WaterScenePart part)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     //shaderprogram
+    Program& waterShaderProgram = app->programs[app->waterPassShaderID];
+    glUseProgram(waterShaderProgram.handle);
 }
 
 unsigned int loadCubemap(std::vector<std::string> faces)

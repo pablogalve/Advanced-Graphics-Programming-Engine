@@ -151,16 +151,13 @@
     <None Include="WorkingDir\cubemaps_shader.glsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="WorkingDir\default.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="WorkingDir\default.vert">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="WorkingDir\skybox.frag">
       <Filter>Shaders</Filter>
     </None>
     <None Include="WorkingDir\skybox.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="WorkingDir\water_shader.glsl">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

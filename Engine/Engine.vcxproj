@@ -68,6 +68,7 @@
     <None Include="WorkingDir\skybox_shader.glsl" />
     <None Include="WorkingDir\textured_geometry_shader.glsl" />
     <None Include="WorkingDir\shading_pass_shader.glsl" />
+    <None Include="WorkingDir\water_shader.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
