@@ -17,6 +17,8 @@ struct Camera {
     glm::vec3 right;
     glm::vec3 up;
 
+    float viewportWidth;
+    float viewportHeight;
     float aspectRatio;
     float znear;
     float zfar;

@@ -198,6 +198,11 @@ struct Skybox
     };
 };
 
+enum WaterScenePart {
+    Reflection,
+    Refraction
+};
+
 struct App
 {
     // Loop
@@ -272,6 +277,12 @@ struct App
     RenderTargetType renderTarget = RenderTargetType::DEFAULT;
 
     Skybox skybox;
+
+    //Water shader
+    GBuffer *fboReflection;
+    GBuffer *fboRefraction;
+
+    bool renderWater;
 };
 
 void Init(App* app);
@@ -284,15 +295,18 @@ void Render(App* app);
 
 void RenderQuad(App* app);
 
+//Skybox shader
 void InitSkybox(App* app);
 void RenderSkybox(App* app);
 unsigned int loadCubemap(std::vector<std::string> faces);
+
+//Water Shader
+void InitWaterShader(App* app);
+void passWaterScene(Camera* camera, GLenum colorAttachment, WaterScenePart part);
+
+//Engine stuff
 u32 loadTexture(char const* path);
-
 u32 LoadTexture2D(App* app, const char* filepath);
-
 GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
-
 void SetAttributes(Program& program);
-
 void InitEntitiesInBulk(App* app, std::vector<glm::vec3> positions, u32 modelId, float scaleFactor = 1.0f);

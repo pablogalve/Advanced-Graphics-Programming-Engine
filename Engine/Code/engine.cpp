@@ -419,6 +419,8 @@ void Init(App* app)
     // FBO
     app->gFbo.Initialize(app->displaySize.x, app->displaySize.y);
     app->shadingFbo.Initialize(app->displaySize.x, app->displaySize.y);*/
+
+app->renderWater = false;
 }
 
 void Gui(App* app)
@@ -481,6 +483,8 @@ void Gui(App* app)
 
     ImGui::Separator();
     ImGui::Checkbox("Enable debug groups", &app->enableDebugGroup);
+    ImGui::Separator();
+    ImGui::Checkbox("Enable Water Rendering", &app->renderWater);
 
     ImGui::End();
 }
@@ -718,6 +722,41 @@ void Render(App* app)
     glUseProgram(0);*/
 
     //RenderSkybox(app);    
+    
+    //Water rendering if enabled
+    if (app->renderWater) {
+
+        #pragma region REFLECTION_PASS
+        app->fboReflection->Bind();
+
+        Camera reflectionCamera = app->camera;
+
+        reflectionCamera.position.y = -reflectionCamera.position.y;
+        reflectionCamera.pitch = -reflectionCamera.pitch;
+        reflectionCamera.viewportWidth = app->displaySize.x;
+        reflectionCamera.viewportHeight = app->displaySize.y;
+        //matrix
+
+        passWaterScene(&reflectionCamera, GL_COLOR_ATTACHMENT0, WaterScenePart::Reflection);
+        //passBackground(&reflectionCamera, GL_COLOR_ATTACHMENT0);----> means rendering everything else? no function in ppt;
+
+        app->fboReflection->FreeMemory();
+        #pragma endregion REFLECTION_PASS
+
+        #pragma region REFRACTION_PASS
+        app->fboRefraction->Bind();
+
+        Camera refractionCamera = app->camera;
+        refractionCamera.viewportWidth = app->displaySize.x;
+        refractionCamera.viewportWidth = app->displaySize.y;
+        //matrix
+
+        passWaterScene(&refractionCamera, GL_COLOR_ATTACHMENT0, WaterScenePart::Refraction);
+
+        app->fboRefraction->FreeMemory();
+        #pragma endregion REFRACTION_PASS
+     
+    }
 }
 
 void RenderQuad(App* app)
@@ -826,6 +865,62 @@ void RenderSkybox(App* app)
     {
         glPopDebugGroup();
     }
+}
+
+void InitWaterShader(App* app) {
+
+    app->fboReflection = nullptr;
+    app->fboRefraction = nullptr;
+
+    GLuint rtReflection = 0;
+    glGenTextures(1, &rtReflection);
+    glBindTexture(GL_TEXTURE_2D, rtReflection);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+    GLuint rtRefraction = 0;
+    glGenTextures(1, &rtRefraction);
+    glBindTexture(GL_TEXTURE_2D, rtRefraction);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+    GLuint rtReflectionDepth = 0;
+    glGenTextures(1, &rtReflectionDepth);
+    glBindTexture(GL_TEXTURE_2D, rtReflectionDepth);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, app->displaySize.x, app->displaySize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
+    GLuint rtRefractionDepth = 0;
+    glGenTextures(1, &rtRefractionDepth);
+    glBindTexture(GL_TEXTURE_2D, rtRefractionDepth);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, app->displaySize.x, app->displaySize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
+    app->fboReflection->Bind();
+}
+
+void passWaterScene(Camera* camera, GLenum colorAttachment, WaterScenePart part) {
+
+    glDrawBuffer(colorAttachment);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CLIP_DISTANCE0);
+
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    //shaderprogram
 }
 
 unsigned int loadCubemap(std::vector<std::string> faces)
