@@ -271,7 +271,7 @@ void Init(App* app)
     app->glInfo.vendor = (const char*)glGetString(GL_VENDOR);
     app->glInfo.GLSLversion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
        
-    app->enableDeferredShading = true;
+    app->enableDeferredShading = true; // Don't change this line
     
     InitModelsAndLights(app);
     InitSkybox(app);
@@ -326,7 +326,7 @@ void InitModelsAndLights(App* app)
 
     // Init models
     u32 patrickTexIdx = LoadModel(app, "Models/Patrick/Patrick.obj");
-    app->planeId = LoadModel(app, "Models/Wall/plane.obj");
+    app->planeId = LoadModel(app, "Models/Plane/plane.obj");
     app->sphereId = LoadModel(app, "Models/Sphere/sphere.obj");
     u32 cyborgId = LoadModel(app, "Models/Cyborg/cyborg.obj");
     u32 planetMarsId = LoadModel(app, "Models/Planet/Mars/mars.obj");
@@ -554,8 +554,12 @@ void Render(App* app)
         glViewport(0, 0, app->displaySize.x, app->displaySize.y);
         glEnable(GL_DEPTH_TEST);
     }
-        
-    RenderDeferredRenderingScene(app);    
+
+    if (app->enableDeferredShading)
+    {
+        RenderDeferredRenderingScene(app);
+    }
+          
     RenderSkybox(app);
 
     //Water rendering if enabled
@@ -644,6 +648,7 @@ void RenderSkybox(App* app)
     }
 
     // Enable deferred rendering combined with a skybox
+    if(app->enableDeferredShading)
     {
         glEnable(GL_DEPTH_TEST);
 
@@ -690,6 +695,18 @@ void InitWaterShader(App* app) {
     app->fboReflection = 0;
     app->fboRefraction = 0;
 
+    {
+        /*u32 waterPlane = LoadModel(app, "Models/Plane.obj");
+
+        Entity entity = Entity(
+            glm::vec3(0.0f, 0.0f, 0.0f),    // Position
+            glm::vec3(1.0f),                // Scale factor
+            waterPlane                      // Model index
+        );
+
+        app->entities.push_back(entity);*/
+    }
+
     GLuint rtReflection = 0;
     glGenTextures(1, &rtReflection);
     glBindTexture(GL_TEXTURE_2D, rtReflection);
@@ -726,7 +743,7 @@ void InitWaterShader(App* app) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, app->displaySize.x, app->displaySize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
-    //FBO REFLECTION BIND->COLOR->DEPTH->RELEASE
+    // FBO REFLECTION BIND->COLOR->DEPTH->RELEASE
     glGenFramebuffers(1, &app->fboReflection);
     glBindFramebuffer(GL_FRAMEBUFFER, app->fboReflection);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rtReflection, 0);
@@ -734,7 +751,7 @@ void InitWaterShader(App* app) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDeleteFramebuffers(1, &app->fboReflection);
 
-    //FBO REFRACTION BIND->COLOR->DEPTH->RELEASE
+    // FBO REFRACTION BIND->COLOR->DEPTH->RELEASE
     glGenFramebuffers(1, &app->fboRefraction);
     glBindFramebuffer(GL_FRAMEBUFFER, app->fboRefraction);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rtRefraction, 0);
