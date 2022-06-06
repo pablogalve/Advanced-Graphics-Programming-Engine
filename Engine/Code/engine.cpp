@@ -271,8 +271,32 @@ void Init(App* app)
     app->glInfo.vendor = (const char*)glGetString(GL_VENDOR);
     app->glInfo.GLSLversion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
        
+    app->enableDeferredShading = true;
+    
+    InitModelsAndLights(app);
+    InitSkybox(app);
+    InitWaterShader(app);    
+
+    // Camera    
+    app->camera = Camera(
+        glm::vec3(0.0f, 4.0f, 15.0f),          // Position
+        glm::vec3(-90.0f, 0.0f, 0.0f)          // Rotation
+    );
+
+    app->camera.target = glm::vec3(glm::vec3(0.0f, 0.0f, 0.0f));
+    app->camera.aspectRatio = (float)app->displaySize.x / (float)app->displaySize.y;
+    app->camera.znear = 0.1f;
+    app->camera.zfar = 1000.0f;
+    app->camera.projection = glm::perspective(glm::radians(60.0f), app->camera.aspectRatio, app->camera.znear, app->camera.zfar);
+    app->camera.viewMatrix = glm::lookAt(app->camera.position, app->camera.target, glm::vec3(0.0f, 1.0f, 0.0f));
+    
+    app->renderWater = false;
+}
+
+void InitModelsAndLights(App* app)
+{
     // Program 
-    /*app->texturedGeometryProgramIdx = LoadProgram(app, "textured_geometry_shader.glsl", "TEXTURED_GEOMETRY");
+    app->texturedGeometryProgramIdx = LoadProgram(app, "textured_geometry_shader.glsl", "TEXTURED_GEOMETRY");
     Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
     app->programUniformTexture = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
 
@@ -289,7 +313,7 @@ void Init(App* app)
     app->programShadingPassUniformTextureAlbedo = glGetUniformLocation(shadingPassShader.handle, "gAlbedoSpec");
     app->programShadingPassUniformTextureDepth = glGetUniformLocation(shadingPassShader.handle, "gDepth");
     SetAttributes(shadingPassShader);
-    
+
     app->lightsShaderId = LoadProgram(app, "lights_shader.glsl", "LIGHTS_SHADER");
     Program& lightsShader = app->programs[app->lightsShaderId];
     app->programLightsUniformColor = glGetUniformLocation(lightsShader.handle, "lightColor");
@@ -298,33 +322,16 @@ void Init(App* app)
 
     app->texturedMeshProgramIdx = LoadProgram(app, "show_textured_mesh.glsl", "SHOW_TEXTURED_MESH");
     Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
-    SetAttributes(texturedMeshProgram);*/
+    SetAttributes(texturedMeshProgram);
 
-    InitSkybox(app);
-    InitWaterShader(app);
-    
-
-    // Camera    
-    app->camera = Camera(
-        glm::vec3(0.0f, 4.0f, 15.0f),          // Position
-        glm::vec3(-90.0f, 0.0f, 0.0f)          // Rotation
-    );
-
-    app->camera.target = glm::vec3(glm::vec3(0.0f, 0.0f, 0.0f));
-    app->camera.aspectRatio = (float)app->displaySize.x / (float)app->displaySize.y;
-    app->camera.znear = 0.1f;
-    app->camera.zfar = 1000.0f;
-    app->camera.projection = glm::perspective(glm::radians(60.0f), app->camera.aspectRatio, app->camera.znear, app->camera.zfar);
-    app->camera.viewMatrix = glm::lookAt(app->camera.position, app->camera.target, glm::vec3(0.0f, 1.0f, 0.0f));
-            
     // Init models
-    /*u32 patrickTexIdx = LoadModel(app, "Models/Patrick/Patrick.obj");
+    u32 patrickTexIdx = LoadModel(app, "Models/Patrick/Patrick.obj");
     app->planeId = LoadModel(app, "Models/Wall/plane.obj");
     app->sphereId = LoadModel(app, "Models/Sphere/sphere.obj");
     u32 cyborgId = LoadModel(app, "Models/Cyborg/cyborg.obj");
     u32 planetMarsId = LoadModel(app, "Models/Planet/Mars/mars.obj");
     u32 woodenCartId = LoadModel(app, "Models/WoodenCart/cart_OBJ.obj");
-        
+
     // Gameobjects - Entities and lights
     {
         std::vector<glm::vec3> groundPos = { glm::vec3(0.0f, -2.0f, 0.0f) };
@@ -355,28 +362,28 @@ void Init(App* app)
         InitEntitiesInBulk(app, cyborgsPos, cyborgId, 2.0f);
         InitEntitiesInBulk(app, marsPos, planetMarsId, 37.5f);
         InitEntitiesInBulk(app, woodenCartPos, woodenCartId, 3.0f);
-    }*/
+    }
 
     // Add lights
-    /*const u32 nr_lights = 15;
+    const u32 nr_lights = 15;
     glm::vec3 pointLightsPos[nr_lights] =
     {
         glm::vec3(-100.0f, -50.0f, -10.0f),  // Around planet surfice
         glm::vec3(-75.0f, -25.0f, -10.0f),   // Around planet surfice
         glm::vec3(-50.0f, -10.0f, -10.0f),   // Around planet surfice
         glm::vec3(0.0f, 5.0f, 0.0f),         // Inside the the wooden cart
-        glm::vec3(2.0f, 1.5f, 16.0f),        // Illuminating Patrick 
-        glm::vec3(7.0f, 1.5f, 20.0f),        // Illuminating Patrick 
-        glm::vec3(3.0f, 1.5f, 32.0f),        // Illuminating Patrick 
-        glm::vec3(-5.0f, 1.5f, 28.0f),       // Illuminating Patrick 
-        glm::vec3(-16.0f, 1.5f, -13.0f),     // Illuminating Patrick 
-        glm::vec3(1.0f, 6.0f, 5.0f),         // Illuminating cyborg 
-        glm::vec3(15.0f, 6.0f, 1.0f),        // Illuminating cyborg 
-        glm::vec3(10.0f, 6.0f, 5.0f),        // Illuminating cyborg 
-        glm::vec3(1.0f, 6.0f, 32.0f),        // Illuminating cyborg 
-        glm::vec3(6.0f, 6.0f, 13.0f),        // Illuminating cyborg 
+        glm::vec3(2.0f, 1.5f, 16.0f),        // Illuminating Patrick
+        glm::vec3(7.0f, 1.5f, 20.0f),        // Illuminating Patrick
+        glm::vec3(3.0f, 1.5f, 32.0f),        // Illuminating Patrick
+        glm::vec3(-5.0f, 1.5f, 28.0f),       // Illuminating Patrick
+        glm::vec3(-16.0f, 1.5f, -13.0f),     // Illuminating Patrick
+        glm::vec3(1.0f, 6.0f, 5.0f),         // Illuminating cyborg
+        glm::vec3(15.0f, 6.0f, 1.0f),        // Illuminating cyborg
+        glm::vec3(10.0f, 6.0f, 5.0f),        // Illuminating cyborg
+        glm::vec3(1.0f, 6.0f, 32.0f),        // Illuminating cyborg
+        glm::vec3(6.0f, 6.0f, 13.0f),        // Illuminating cyborg
     };
-    
+
     for (int i = 0; i < nr_lights; i++)
     {
         Light pointLight = Light(
@@ -406,9 +413,9 @@ void Init(App* app)
         );
     app->lights.push_back(directionalLight1);
     app->lights.push_back(directionalLight2);
-    */
+    
     // Local parameters
-    /*glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
     glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBufferAlignment);
     app->uniformBuffer = CreateConstantBuffer(app->maxUniformBufferSize);
 
@@ -419,9 +426,7 @@ void Init(App* app)
 
     // FBO
     app->gFbo.Initialize(app->displaySize.x, app->displaySize.y);
-    app->shadingFbo.Initialize(app->displaySize.x, app->displaySize.y);*/
-
-app->renderWater = false;
+    app->shadingFbo.Initialize(app->displaySize.x, app->displaySize.y);
 }
 
 void Gui(App* app)
@@ -475,6 +480,7 @@ void Gui(App* app)
     // Render target
     ImGui::Separator();
     ImGui::Text("Render Targets - gBuffer");
+    ImGui::Checkbox("Enable deferred shading", &app->enableDeferredShading);
     const char* items[] = { "Default", "Position", "Normals", "Albedo", "Depth" };
     static int item = 0;
     if (ImGui::Combo("Render Target", &item, items, IM_ARRAYSIZE(items)))
@@ -496,7 +502,7 @@ void Update(App* app)
     app->camera.HandleInput(app);
 
     // Global parameters
-    /*MapBuffer(app->globalBuffer, GL_WRITE_ONLY);
+    MapBuffer(app->globalBuffer, GL_WRITE_ONLY);
     app->globalParamsOffset = app->globalBuffer.head;
 
     PushVec3(app->globalBuffer, app->camera.position);
@@ -536,7 +542,7 @@ void Update(App* app)
         app->entities[i].localParamsSize = app->uniformBuffer.head - app->entities[i].localParamsOffset;
     }
 
-    UnmapBuffer(app->uniformBuffer);*/
+    UnmapBuffer(app->uniformBuffer);
 }
 
 void Render(App* app)
@@ -548,217 +554,14 @@ void Render(App* app)
         glViewport(0, 0, app->displaySize.x, app->displaySize.y);
         glEnable(GL_DEPTH_TEST);
     }
-
-    // Render skybox
+        
+    RenderDeferredRenderingScene(app);
     RenderSkybox(app);
 
-    // Render object
-    /* {
-        app->gFbo.Bind();
-
-        Program& texturedMeshProgram = app->programs[app->geometryPassShaderId];
-        glUseProgram(texturedMeshProgram.handle);
-
-        glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->uniformBuffer.handle, app->globalParamsOffset, app->globalParamsSize);
-
-        if (app->models.size() == 0) {
-            throw std::invalid_argument("There are no models. Check if there are models in the directory and if LoadModel() is called.");
-        }
-
-        for (int i = 0; i < app->entities.size(); ++i)
-        {
-            if (app->enableDebugGroup)
-            {
-                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Entity");
-            }
-
-            Model& model = app->models[app->entities[i].modelIndex];
-            Mesh& mesh = app->meshes[model.meshIdx];
-            glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), app->uniformBuffer.handle, app->entities[i].localParamsOffset, app->entities[i].localParamsSize);
-
-            for (u32 i = 0; i < mesh.submeshes.size(); ++i)
-            {
-                GLuint vao = FindVAO(mesh, i, texturedMeshProgram);
-                glBindVertexArray(vao);
-
-                u32 subMeshMaterialIdx = model.materialIdx[i];
-                Material& submeshMaterial = app->materials[subMeshMaterialIdx];
-
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
-                glUniform1i(app->texturedMeshProgram_uTexture, 0);
-
-                Submesh& submesh = mesh.submeshes[i];
-                glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
-            }
-
-            if (app->enableDebugGroup)
-            {
-                glPopDebugGroup();
-            }
-        }
-
-        app->gFbo.Unbind();
-    }
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindVertexArray(0);
-    glUseProgram(0);*/
-    /*
-    // Shading pass
-
-    glDisable(GL_DEPTH_TEST);
-
-    app->shadingFbo.Bind();
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    Program& shaderPassProgram = app->programs[app->shadingPassShaderId];
-    glUseProgram(shaderPassProgram.handle);
-
-    glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->globalBuffer.handle, app->globalParamsOffset, app->globalParamsSize);
-
-    glUniform1i(app->programShadingPassUniformTexturePosition, 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(RenderTargetType::POSITION));
-
-    glUniform1i(app->programShadingPassUniformTextureNormals, 1);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(RenderTargetType::NORMALS));
-
-    glUniform1i(app->programShadingPassUniformTextureAlbedo, 2);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(RenderTargetType::ALBEDO));
-
-    glUniform1i(app->programShadingPassUniformTextureDepth, 3);
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(RenderTargetType::DEPTH));
-    
-    RenderQuad(app);    
-
-    app->shadingFbo.Unbind();
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glUseProgram(0);
-
-    // Render lights on top of the scene
-    glEnable(GL_DEPTH_TEST);
-
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, app->gFbo.GetTexture(RenderTargetType::FBO));
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, app->shadingFbo.GetTexture(RenderTargetType::FBO));
-    glBlitFramebuffer(0, 0, app->displaySize.x, app->displaySize.y, 0, 0, app->displaySize.x, app->displaySize.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    app->shadingFbo.Bind(false);
-
-    Program& lightsShader = app->programs[app->lightsShaderId];
-    glUseProgram(lightsShader.handle);
-
-    for (u32 i = 0; i < app->lights.size(); ++i)
-    {
-        if (app->enableDebugGroup)
-        {
-            glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Light");
-        }
-
-        // Render directional lights as planes and point lights as spheres
-        u32 modelIndex = 0U;
-        glm::mat4 worldMatrix;
-        switch (app->lights[i].type)
-        {
-            case LightType::LightType_Directional:
-                modelIndex = app->planeId;
-                worldMatrix = TransformPositionScale(app->lights[i].position, glm::vec3(3.0f, 3.0f, 3.0f));
-                worldMatrix = TransformRotation(worldMatrix, 90.0, glm::vec3(1.f, 0.f, 0.f));
-                break;
-            case LightType::LightType_Point:
-                modelIndex = app->sphereId;
-                worldMatrix = TransformPositionScale(app->lights[i].position, glm::vec3(0.3f, 0.3f, 0.3f));
-                break;
-        }
-
-        glm::mat4 worldViewProjectionMatrix = app->camera.projection * app->camera.viewMatrix * worldMatrix;
-        glUniformMatrix4fv(app->programLightsUniformWorldMatrix, 1, GL_FALSE, (GLfloat*)&worldViewProjectionMatrix);
-        glUniform3f(app->programLightsUniformColor, app->lights[i].color.x, app->lights[i].color.y, app->lights[i].color.z);
-
-        Mesh& mesh = app->meshes[app->models[modelIndex].meshIdx];
-        GLuint vao = FindVAO(mesh, 0, lightsShader);
-        glBindVertexArray(vao);
-
-        glDrawElements(GL_TRIANGLES, mesh.submeshes[0].indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.submeshes[0].indexOffset);
-
-        if (app->enableDebugGroup)
-        {
-            glPopDebugGroup();
-        }
-    }
-
-    app->shadingFbo.Unbind();
-
-    Program& programTexturedGeometry = app->programs[app->texturedGeometryProgramIdx];
-    glUseProgram(programTexturedGeometry.handle);
-
-    glUniform1i(app->programUniformTexture, 0);
-    glActiveTexture(GL_TEXTURE0);
-    if (app->renderTarget == RenderTargetType::DEFAULT)
-    {
-        glBindTexture(GL_TEXTURE_2D, app->shadingFbo.GetTexture(RenderTargetType::DEFAULT));
-    }
-    else
-    {
-        glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(app->renderTarget));
-    }
-    
-    RenderQuad(app);    
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glUseProgram(0);*/
-
-    //RenderSkybox(app);    
-    
     //Water rendering if enabled
     if (app->renderWater) {
 
-        #pragma region REFLECTION_PASS
-
-        
-        //app->fboReflection->Bind(); BIND IN INIT
-
-        Camera reflectionCamera = app->camera;
-
-        reflectionCamera.position.y = -reflectionCamera.position.y;
-        reflectionCamera.pitch = -reflectionCamera.pitch;
-        reflectionCamera.viewportWidth = app->displaySize.x;
-        reflectionCamera.viewportHeight = app->displaySize.y;
-        //matrix
-
-        PassWaterScene(app, &reflectionCamera, GL_COLOR_ATTACHMENT0, WaterScenePart::Reflection);
-        //passBackground(&reflectionCamera, GL_COLOR_ATTACHMENT0);----> means rendering everything else? no function in ppt;
-
-        //app->fboReflection->FreeMemory(); UNBIND IN INIT
-        #pragma endregion REFLECTION_PASS
-
-        #pragma region REFRACTION_PASS
-        //app->fboRefraction->Bind();
-
-        Camera refractionCamera = app->camera;
-        refractionCamera.viewportWidth = app->displaySize.x;
-        refractionCamera.viewportWidth = app->displaySize.y;
-        //matrix
-
-        PassWaterScene(app, &refractionCamera, GL_COLOR_ATTACHMENT0, WaterScenePart::Refraction);
-
-        //app->fboRefraction->FreeMemory();
-        #pragma endregion REFRACTION_PASS
-     
+        RenderWater(app);
     }
 }
 
@@ -930,6 +733,40 @@ void InitWaterShader(App* app) {
     glDeleteFramebuffers(1, &app->fboRefraction);
 }
 
+void RenderWater(App* app)
+{
+    #pragma region REFLECTION_PASS
+
+    //app->fboReflection->Bind(); BIND IN INIT
+
+    Camera reflectionCamera = app->camera;
+
+    reflectionCamera.position.y = -reflectionCamera.position.y;
+    reflectionCamera.pitch = -reflectionCamera.pitch;
+    reflectionCamera.viewportWidth = app->displaySize.x;
+    reflectionCamera.viewportHeight = app->displaySize.y;
+    //matrix
+
+    PassWaterScene(app, &reflectionCamera, GL_COLOR_ATTACHMENT0, WaterScenePart::Reflection);
+    //passBackground(&reflectionCamera, GL_COLOR_ATTACHMENT0);----> means rendering everything else? no function in ppt;
+
+    //app->fboReflection->FreeMemory(); UNBIND IN INIT
+    #pragma endregion REFLECTION_PASS
+
+    #pragma region REFRACTION_PASS
+    //app->fboRefraction->Bind();
+
+    Camera refractionCamera = app->camera;
+    refractionCamera.viewportWidth = app->displaySize.x;
+    refractionCamera.viewportWidth = app->displaySize.y;
+    //matrix
+
+    PassWaterScene(app, &refractionCamera, GL_COLOR_ATTACHMENT0, WaterScenePart::Refraction);
+
+    //app->fboRefraction->FreeMemory();
+    #pragma endregion REFRACTION_PASS   
+}
+
 void PassWaterScene(App* app, Camera* camera, GLenum colorAttachment, WaterScenePart part) {
 
     glDrawBuffer(colorAttachment);
@@ -987,6 +824,179 @@ unsigned int loadCubemap(std::vector<std::string> faces)
     }    
 
     return textureID;
+}
+
+void RenderDeferredRenderingScene(App* app)
+{
+    // Render object
+    {
+        app->gFbo.Bind();
+
+        Program& texturedMeshProgram = app->programs[app->geometryPassShaderId];
+        glUseProgram(texturedMeshProgram.handle);
+
+        glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->uniformBuffer.handle, app->globalParamsOffset, app->globalParamsSize);
+
+        if (app->models.size() == 0) {
+            throw std::invalid_argument("There are no models. Check if there are models in the directory and if LoadModel() is called.");
+        }
+
+        for (int i = 0; i < app->entities.size(); ++i)
+        {
+            if (app->enableDebugGroup)
+            {
+                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Entity");
+            }
+
+            Model& model = app->models[app->entities[i].modelIndex];
+            Mesh& mesh = app->meshes[model.meshIdx];
+            glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), app->uniformBuffer.handle, app->entities[i].localParamsOffset, app->entities[i].localParamsSize);
+
+            for (u32 i = 0; i < mesh.submeshes.size(); ++i)
+            {
+                GLuint vao = FindVAO(mesh, i, texturedMeshProgram);
+                glBindVertexArray(vao);
+
+                u32 subMeshMaterialIdx = model.materialIdx[i];
+                Material& submeshMaterial = app->materials[subMeshMaterialIdx];
+
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
+                glUniform1i(app->texturedMeshProgram_uTexture, 0);
+
+                Submesh& submesh = mesh.submeshes[i];
+                glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+            }
+
+            if (app->enableDebugGroup)
+            {
+                glPopDebugGroup();
+            }
+        }
+
+        app->gFbo.Unbind();
+    }
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindVertexArray(0);
+    glUseProgram(0);
+    
+    // Shading pass
+
+    glDisable(GL_DEPTH_TEST);
+
+    app->shadingFbo.Bind();
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    Program& shaderPassProgram = app->programs[app->shadingPassShaderId];
+    glUseProgram(shaderPassProgram.handle);
+
+    glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->globalBuffer.handle, app->globalParamsOffset, app->globalParamsSize);
+
+    glUniform1i(app->programShadingPassUniformTexturePosition, 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(RenderTargetType::POSITION));
+
+    glUniform1i(app->programShadingPassUniformTextureNormals, 1);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(RenderTargetType::NORMALS));
+
+    glUniform1i(app->programShadingPassUniformTextureAlbedo, 2);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(RenderTargetType::ALBEDO));
+
+    glUniform1i(app->programShadingPassUniformTextureDepth, 3);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(RenderTargetType::DEPTH));
+
+    RenderQuad(app);
+
+    app->shadingFbo.Unbind();
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glUseProgram(0);
+
+    // Render lights on top of the scene
+    glEnable(GL_DEPTH_TEST);
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, app->gFbo.GetTexture(RenderTargetType::FBO));
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, app->shadingFbo.GetTexture(RenderTargetType::FBO));
+    glBlitFramebuffer(0, 0, app->displaySize.x, app->displaySize.y, 0, 0, app->displaySize.x, app->displaySize.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    app->shadingFbo.Bind(false);
+
+    Program& lightsShader = app->programs[app->lightsShaderId];
+    glUseProgram(lightsShader.handle);
+
+    for (u32 i = 0; i < app->lights.size(); ++i)
+    {
+        if (app->enableDebugGroup)
+        {
+            glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Light");
+        }
+
+        // Render directional lights as planes and point lights as spheres
+        u32 modelIndex = 0U;
+        glm::mat4 worldMatrix;
+        switch (app->lights[i].type)
+        {
+            case LightType::LightType_Directional:
+                modelIndex = app->planeId;
+                worldMatrix = TransformPositionScale(app->lights[i].position, glm::vec3(3.0f, 3.0f, 3.0f));
+                worldMatrix = TransformRotation(worldMatrix, 90.0, glm::vec3(1.f, 0.f, 0.f));
+                break;
+            case LightType::LightType_Point:
+                modelIndex = app->sphereId;
+                worldMatrix = TransformPositionScale(app->lights[i].position, glm::vec3(0.3f, 0.3f, 0.3f));
+                break;
+        }
+
+        glm::mat4 worldViewProjectionMatrix = app->camera.projection * app->camera.viewMatrix * worldMatrix;
+        glUniformMatrix4fv(app->programLightsUniformWorldMatrix, 1, GL_FALSE, (GLfloat*)&worldViewProjectionMatrix);
+        glUniform3f(app->programLightsUniformColor, app->lights[i].color.x, app->lights[i].color.y, app->lights[i].color.z);
+
+        Mesh& mesh = app->meshes[app->models[modelIndex].meshIdx];
+        GLuint vao = FindVAO(mesh, 0, lightsShader);
+        glBindVertexArray(vao);
+
+        glDrawElements(GL_TRIANGLES, mesh.submeshes[0].indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.submeshes[0].indexOffset);
+
+        if (app->enableDebugGroup)
+        {
+            glPopDebugGroup();
+        }
+    }
+
+    app->shadingFbo.Unbind();
+
+    Program& programTexturedGeometry = app->programs[app->texturedGeometryProgramIdx];
+    glUseProgram(programTexturedGeometry.handle);
+
+    glUniform1i(app->programUniformTexture, 0);
+    glActiveTexture(GL_TEXTURE0);
+    if (app->renderTarget == RenderTargetType::DEFAULT)
+    {
+        glBindTexture(GL_TEXTURE_2D, app->shadingFbo.GetTexture(RenderTargetType::DEFAULT));
+    }
+    else
+    {
+        glBindTexture(GL_TEXTURE_2D, app->gFbo.GetTexture(app->renderTarget));
+    }
+
+    RenderQuad(app);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glUseProgram(0);
 }
 
 u32 loadTexture(char const* path)

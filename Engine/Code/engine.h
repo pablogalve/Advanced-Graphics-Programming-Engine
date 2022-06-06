@@ -269,8 +269,11 @@ struct App
     u32     globalParamsSize;
 
     bool enableDebugGroup = true;
-
-
+        
+    // FBO - Deferred Rendering
+    bool enableDeferredShading;
+    GBuffer gFbo;
+    ShadingBuffer shadingFbo;
     RenderTargetType renderTarget = RenderTargetType::DEFAULT;
 
     //Skybox Shader
@@ -286,6 +289,7 @@ struct App
 };
 
 void Init(App* app);
+void InitModelsAndLights(App* app);
 
 void Gui(App* app);
 
@@ -300,8 +304,11 @@ void InitSkybox(App* app);
 void RenderSkybox(App* app);
 unsigned int loadCubemap(std::vector<std::string> faces);
 
+void RenderDeferredRenderingScene(App* app);
+
 //Water Shader
 void InitWaterShader(App* app);
+void RenderWater(App* app);
 void PassWaterScene(App* app, Camera* camera, GLenum colorAttachment, WaterScenePart part);
 
 //Engine stuff
