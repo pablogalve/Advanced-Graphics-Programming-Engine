@@ -555,7 +555,7 @@ void Render(App* app)
         glEnable(GL_DEPTH_TEST);
     }
         
-    RenderDeferredRenderingScene(app);
+    RenderDeferredRenderingScene(app);    
     RenderSkybox(app);
 
     //Water rendering if enabled
@@ -641,6 +641,16 @@ void RenderSkybox(App* app)
     if (app->enableDebugGroup)
     {
         glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Skybox");
+    }
+
+    // Enable deferred rendering combined with a skybox
+    {
+        glEnable(GL_DEPTH_TEST);
+
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, app->gFbo.GetTexture(RenderTargetType::FBO));
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glBlitFramebuffer(0, 0, app->displaySize.x, app->displaySize.y, 0, 0, app->displaySize.x, app->displaySize.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
     // Since the cubemap will always have a depth of 1.0, we need that equal sign so it doesn't get discarded
