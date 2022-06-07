@@ -38,4 +38,6 @@ struct Camera {
     glm::vec3 target;
     float radius;
     float rotationSpeed;
+
+    double lastTime;
 };

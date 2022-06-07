@@ -204,7 +204,7 @@ enum WaterScenePart {
     Refraction
 };
 
-struct Landscape
+struct Object
 {
     Model model;
     Shader shader;
@@ -294,12 +294,13 @@ struct App
 
     bool renderWater;
 
-    Landscape landscape;
+    Object backpack;
+    Object water;
 };
 
 void Init(App* app);
 void InitModelsAndLights(App* app);
-void InitLandscape(App* app);
+void InitBackPack(App* app);
 
 void Gui(App* app);
 

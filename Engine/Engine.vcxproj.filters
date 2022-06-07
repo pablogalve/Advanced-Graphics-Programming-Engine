@@ -69,6 +69,9 @@
     <ClCompile Include="Code\Shader.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
+    <ClCompile Include="Code\assimp_model_loading.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\imgui-docking\imconfig.h">
@@ -131,6 +134,9 @@
     <ClInclude Include="Code\Mesh.h">
       <Filter>Engine\Geometry</Filter>
     </ClInclude>
+    <ClInclude Include="Code\assimp_model_loading.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="WorkingDir\geometry_pass_shader.glsl">
@@ -163,10 +169,16 @@
     <None Include="WorkingDir\water_shader.glsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="WorkingDir\model_loading.fs">
+    <None Include="WorkingDir\model_loading.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="WorkingDir\model_loading.vs">
+    <None Include="WorkingDir\model_loading.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="WorkingDir\water.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="WorkingDir\water.frag">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

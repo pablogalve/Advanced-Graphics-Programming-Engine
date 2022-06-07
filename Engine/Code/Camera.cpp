@@ -13,11 +13,29 @@ Camera::Camera(glm::vec3 pos, glm::vec3 rot)
 	yaw = rot.x;
 	pitch = rot.y;
 
-	orbiting = false;
+	orbiting = true;
 	target = glm::vec3(0, 0, 0);
 	direction = glm::normalize(position - target);
-	radius = 70.0f;
+	radius = 20.0f;
 	rotationSpeed = 0.5f;
+
+	lastTime = 0.0;
+
+	{
+		direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+		direction.y = sin(glm::radians(pitch));
+		direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+
+		// Recalculate axis
+		forward = glm::normalize(direction);
+		right = glm::normalize(glm::cross(glm::vec3(0, 1, 0), forward));
+		up = glm::cross(forward, right);
+
+		viewMatrix = glm::lookAt(
+			position,
+			position + forward,
+			up);
+	}
 }
 
 void Camera::HandleInput(App* app)
@@ -60,13 +78,23 @@ void Camera::RecalculateViewMatrix()
 {
 	if (orbiting)
 	{
-		float camX = sin(glfwGetTime() * rotationSpeed) * radius;
-		float camZ = cos(glfwGetTime() * rotationSpeed) * radius;
+		double currTime = glfwGetTime();
+		float camX = sin(currTime * rotationSpeed) * radius;
+		float camZ = cos(currTime * rotationSpeed) * radius;
 
 		viewMatrix = glm::lookAt(
 			glm::vec3(camX, 0.0f, camZ), 
 			target, 
 			glm::vec3(0.0f, 1.0f, 0.0f));
+
+		yaw -= (currTime - lastTime) * rotationSpeed * radius;
+		pitch = 0.0f;
+
+		direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+		direction.y = sin(glm::radians(pitch));
+		direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+
+		lastTime = currTime;
 	}
 	else
 	{
@@ -80,8 +108,8 @@ void Camera::RecalculateViewMatrix()
 		up = glm::cross(forward, right);
 
 		viewMatrix = glm::lookAt(
-			position, 
-			position + forward, 
+			position,
+			position + forward,
 			up);
-	}	
+	}
 }

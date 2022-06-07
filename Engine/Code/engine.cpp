@@ -6,6 +6,7 @@
 
 #include "buffer_management.h"
 #include <iostream>
+#include "assimp_model_loading.h"
 
 GLuint CreateProgramFromSource(String programSource, const char* shaderName)
 {
@@ -270,11 +271,11 @@ void Init(App* app)
     app->glInfo.vendor = (const char*)glGetString(GL_VENDOR);
     app->glInfo.GLSLversion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
        
-    app->enableDeferredShading = true; // Don't change this line
+    app->enableDeferredShading = false;
     
     InitModelsAndLights(app);
     InitSkybox(app);
-    InitLandscape(app);
+    InitBackPack(app);
     InitWaterShader(app);    
 
     // Camera    
@@ -290,7 +291,7 @@ void Init(App* app)
     app->camera.projection = glm::perspective(glm::radians(60.0f), app->camera.aspectRatio, app->camera.znear, app->camera.zfar);
     app->camera.viewMatrix = glm::lookAt(app->camera.position, app->camera.target, glm::vec3(0.0f, 1.0f, 0.0f));
     
-    app->renderWater = false;
+    app->renderWater = true;
 }
 
 void InitModelsAndLights(App* app)
@@ -429,12 +430,12 @@ void InitModelsAndLights(App* app)
     app->shadingFbo.Initialize(app->displaySize.x, app->displaySize.y);
 }
 
-void InitLandscape(App* app)
+void InitBackPack(App* app)
 {
     Model model("Models/backpack/backpack.obj");
-    Shader shader("model_loading.vs", "model_loading.fs");
-    app->landscape.model = model;
-    app->landscape.shader = shader;
+    Shader shader("model_loading.vert", "model_loading.frag");
+    app->backpack.model = model;
+    app->backpack.shader = shader;
 }
 
 void Gui(App* app)
@@ -563,6 +564,12 @@ void Render(App* app)
         glEnable(GL_DEPTH_TEST);
     }
 
+    //Water rendering if enabled
+    if (app->renderWater) {
+
+        RenderWater(app);
+    }
+
     if (app->enableDeferredShading)
     {
         //RenderDeferredRenderingScene(app);
@@ -570,14 +577,8 @@ void Render(App* app)
     else {
         RenderForwardRenderingScene(app);
     }
-          
+
     RenderSkybox(app);
-
-    //Water rendering if enabled
-    if (app->renderWater) {
-
-        RenderWater(app);
-    }
 }
 
 void RenderQuad(App* app)
@@ -678,7 +679,7 @@ void RenderSkybox(App* app)
     // We make the mat4 into a mat3 and then a mat4 again in order to get rid of the last row and column
     // The last row and column affect the translation of the skybox (which we don't want to affect)
     view = glm::mat4(glm::mat3(glm::lookAt(app->camera.position, app->camera.position + app->camera.direction, app->camera.up)));
-    projection = glm::perspective(glm::radians(45.0f), (float)app->displaySize.x / app->displaySize.y, 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(60.0f), (float)app->displaySize.x / app->displaySize.y, 0.1f, 100.0f);
     glUniformMatrix4fv(glGetUniformLocation(app->skybox.shader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(glGetUniformLocation(app->skybox.shader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
@@ -699,7 +700,12 @@ void RenderSkybox(App* app)
     }
 }
 
-void InitWaterShader(App* app) {
+void InitWaterShader(App* app) 
+{
+    Model model("Models/Plane/cube.obj");
+    Shader shader("water.vert", "water.frag");
+    app->water.model = model;
+    app->water.shader = shader;
 
     app->waterPassShaderID = LoadProgram(app, "water_shader.glsl", "WATER_PASS_SHADER");
 
@@ -707,7 +713,7 @@ void InitWaterShader(App* app) {
     app->fboRefraction = 0;
 
     {
-        /*u32 waterPlane = LoadModel(app, "Models/Plane.obj");
+        u32 waterPlane = LoadModel(app, "Models/Plane.obj");
 
         Entity entity = Entity(
             glm::vec3(0.0f, 0.0f, 0.0f),    // Position
@@ -715,7 +721,7 @@ void InitWaterShader(App* app) {
             waterPlane                      // Model index
         );
 
-        app->entities.push_back(entity);*/
+        app->entities.push_back(entity);
     }
 
     GLuint rtReflection = 0;
@@ -773,9 +779,35 @@ void InitWaterShader(App* app) {
 
 void RenderWater(App* app)
 {
+    if (app->enableDebugGroup)
+    {
+        glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Water");
+    }
+
+    /*glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    app->water.shader.Activate();
+
+    // view/projection transformations
+    glm::mat4 projection = glm::perspective(glm::radians(60.0f), (float)app->displaySize.x / (float)app->displaySize.y, 0.1f, 1000.0f);
+    glm::mat4 view = app->camera.viewMatrix;
+    app->water.shader.setMat4("projection", projection);
+    app->water.shader.setMat4("view", view);
+
+    // render the loaded model
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(10.0f, 10.0f, 10.0f));	// it's a bit too big for our scene, so scale it down
+    app->water.shader.setMat4("model", model);
+
+    app->water.model.Draw(app->water.shader);*/
+
+    // ----------------------------------
+
     #pragma region REFLECTION_PASS
 
-    //app->fboReflection->Bind(); BIND IN INIT
+    //app->fboReflection->Bind(); //BIND IN INIT
 
     Camera reflectionCamera = app->camera;
 
@@ -803,6 +835,11 @@ void RenderWater(App* app)
 
     //app->fboRefraction->FreeMemory();
     #pragma endregion REFRACTION_PASS   
+
+    if (app->enableDebugGroup)
+    {
+        glPopDebugGroup();
+    }
 }
 
 void PassWaterScene(App* app, Camera* camera, GLenum colorAttachment, WaterScenePart part) {
@@ -1047,21 +1084,21 @@ void RenderForwardRenderingScene(App* app)
     glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    app->landscape.shader.Activate();
+    app->backpack.shader.Activate();
 
     // view/projection transformations
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)app->displaySize.x / (float)app->displaySize.y, 0.1f, 100.0f);
+    glm::mat4 projection = glm::perspective(glm::radians(60.0f), (float)app->displaySize.x / (float)app->displaySize.y, 0.1f, 100.0f);
     glm::mat4 view = app->camera.viewMatrix;
-    app->landscape.shader.setMat4("projection", projection);
-    app->landscape.shader.setMat4("view", view);
+    app->backpack.shader.setMat4("projection", projection);
+    app->backpack.shader.setMat4("view", view);
 
     // render the loaded model
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
     model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
-    app->landscape.shader.setMat4("model", model);
+    app->backpack.shader.setMat4("model", model);
 
-    app->landscape.model.Draw(app->landscape.shader);
+    app->backpack.model.Draw(app->backpack.shader);
 
     if (app->enableDebugGroup)
     {
