@@ -15,6 +15,7 @@
 #include "entity.h"
 #include "framebuffer.h"
 #include "Shader.h"
+#include "Model.h"
 
 struct Buffer
 {
@@ -33,7 +34,7 @@ struct Image
     i32        stride;
 };
 
-struct Texture
+struct TextureStruct
 {
     GLuint      handle;
     std::string filepath;
@@ -82,14 +83,14 @@ struct Submesh
     std::vector<Vao>   vaos;
 };
 
-struct Mesh
+struct MeshStruct
 {
     std::vector<Submesh> submeshes;
     GLuint               vertexBufferHandle;
     GLuint               indexBufferHandle;
 };
 
-struct Model
+struct ModelStruct
 {
     u32 meshIdx;
     std::vector<u32> materialIdx;
@@ -203,6 +204,12 @@ enum WaterScenePart {
     Refraction
 };
 
+struct Landscape
+{
+    Model model;
+    Shader shader;
+};
+
 struct App
 {
     // Loop
@@ -222,9 +229,9 @@ struct App
     std::vector<Entity> entities;
     std::vector<Light> lights;
 
-    std::vector<Texture>  textures;
-    std::vector<Mesh>     meshes;
-    std::vector<Model>    models;
+    std::vector<TextureStruct>  textures;
+    std::vector<MeshStruct>     meshes;
+    std::vector<ModelStruct>    models;
     std::vector<Material> materials;
     std::vector<Program>  programs;
 
@@ -286,10 +293,13 @@ struct App
     GLuint waterPassShaderID;
 
     bool renderWater;
+
+    Landscape landscape;
 };
 
 void Init(App* app);
 void InitModelsAndLights(App* app);
+void InitLandscape(App* app);
 
 void Gui(App* app);
 
@@ -305,6 +315,7 @@ void RenderSkybox(App* app);
 unsigned int loadCubemap(std::vector<std::string> faces);
 
 void RenderDeferredRenderingScene(App* app);
+void RenderForwardRenderingScene(App* app);
 
 //Water Shader
 void InitWaterShader(App* app);
@@ -314,6 +325,6 @@ void PassWaterScene(App* app, Camera* camera, GLenum colorAttachment, WaterScene
 //Engine stuff
 u32 loadTexture(char const* path);
 u32 LoadTexture2D(App* app, const char* filepath);
-GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
+GLuint FindVAO(MeshStruct& mesh, u32 submeshIndex, const Program& program);
 void SetAttributes(Program& program);
 void InitEntitiesInBulk(App* app, std::vector<glm::vec3> positions, u32 modelId, float scaleFactor = 1.0f);

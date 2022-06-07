@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Code\assimp_model_loading.cpp" />
     <ClCompile Include="Code\buffer_management.cpp" />
     <ClCompile Include="Code\camera.cpp" />
     <ClCompile Include="Code\engine.cpp" />
@@ -38,12 +37,13 @@
     <ClCompile Include="ThirdParty\stb\stb.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Code\assimp_model_loading.h" />
     <ClInclude Include="Code\buffer_management.h" />
     <ClInclude Include="Code\camera.h" />
     <ClInclude Include="Code\engine.h" />
     <ClInclude Include="Code\entity.h" />
     <ClInclude Include="Code\framebuffer.h" />
+    <ClInclude Include="Code\Mesh.h" />
+    <ClInclude Include="Code\Model.h" />
     <ClInclude Include="Code\platform.h" />
     <ClInclude Include="Code\Shader.h" />
     <ClInclude Include="ThirdParty\glad\include\glad\glad.h" />
@@ -62,6 +62,8 @@
     <None Include="WorkingDir\cubemaps_shader.glsl" />
     <None Include="WorkingDir\geometry_pass_shader.glsl" />
     <None Include="WorkingDir\lights_shader.glsl" />
+    <None Include="WorkingDir\model_loading.fs" />
+    <None Include="WorkingDir\model_loading.vs" />
     <None Include="WorkingDir\show_textured_mesh.glsl" />
     <None Include="WorkingDir\skybox.frag" />
     <None Include="WorkingDir\skybox.vert" />

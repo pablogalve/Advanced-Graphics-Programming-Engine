@@ -4,7 +4,6 @@
 #include <stb_image_write.h>
 #include <stdexcept>
 
-#include "assimp_model_loading.h"
 #include "buffer_management.h"
 #include <iostream>
 
@@ -160,7 +159,7 @@ u32 LoadTexture2D(App* app, const char* filepath)
 
     if (image.pixels)
     {
-        Texture tex = {};
+        TextureStruct tex = {};
         tex.handle = CreateTexture2DFromImage(image);
         tex.filepath = filepath;
 
@@ -176,7 +175,7 @@ u32 LoadTexture2D(App* app, const char* filepath)
     }
 }
 
-GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
+GLuint FindVAO(MeshStruct& mesh, u32 submeshIndex, const Program& program)
 {
     Submesh& submesh = mesh.submeshes[submeshIndex];
 
@@ -275,6 +274,7 @@ void Init(App* app)
     
     InitModelsAndLights(app);
     InitSkybox(app);
+    InitLandscape(app);
     InitWaterShader(app);    
 
     // Camera    
@@ -325,12 +325,12 @@ void InitModelsAndLights(App* app)
     SetAttributes(texturedMeshProgram);
 
     // Init models
-    u32 patrickTexIdx = LoadModel(app, "Models/Patrick/Patrick.obj");
+    /*u32 patrickTexIdx = LoadModel(app, "Models/Patrick/Patrick.obj");
     app->planeId = LoadModel(app, "Models/Plane/plane.obj");
     app->sphereId = LoadModel(app, "Models/Sphere/sphere.obj");
     u32 cyborgId = LoadModel(app, "Models/Cyborg/cyborg.obj");
     u32 planetMarsId = LoadModel(app, "Models/Planet/Mars/mars.obj");
-    u32 woodenCartId = LoadModel(app, "Models/WoodenCart/cart_OBJ.obj");
+    u32 woodenCartId = LoadModel(app, "Models/WoodenCart/cart_OBJ.obj");*/
 
     // Gameobjects - Entities and lights
     {
@@ -358,10 +358,10 @@ void InitModelsAndLights(App* app)
         };
 
         //InitEntitiesInBulk(app, groundPos, app->planeId, 1.0f);
-        InitEntitiesInBulk(app, patricksPos, patrickTexIdx, 1.0f);
+        /*InitEntitiesInBulk(app, patricksPos, patrickTexIdx, 1.0f);
         InitEntitiesInBulk(app, cyborgsPos, cyborgId, 2.0f);
         InitEntitiesInBulk(app, marsPos, planetMarsId, 37.5f);
-        InitEntitiesInBulk(app, woodenCartPos, woodenCartId, 3.0f);
+        InitEntitiesInBulk(app, woodenCartPos, woodenCartId, 3.0f);*/
     }
 
     // Add lights
@@ -427,6 +427,14 @@ void InitModelsAndLights(App* app)
     // FBO
     app->gFbo.Initialize(app->displaySize.x, app->displaySize.y);
     app->shadingFbo.Initialize(app->displaySize.x, app->displaySize.y);
+}
+
+void InitLandscape(App* app)
+{
+    Model model("Models/backpack/backpack.obj");
+    Shader shader("model_loading.vs", "model_loading.fs");
+    app->landscape.model = model;
+    app->landscape.shader = shader;
 }
 
 void Gui(App* app)
@@ -557,7 +565,10 @@ void Render(App* app)
 
     if (app->enableDeferredShading)
     {
-        RenderDeferredRenderingScene(app);
+        //RenderDeferredRenderingScene(app);
+    }
+    else {
+        RenderForwardRenderingScene(app);
     }
           
     RenderSkybox(app);
@@ -875,8 +886,8 @@ void RenderDeferredRenderingScene(App* app)
                 glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Entity");
             }
 
-            Model& model = app->models[app->entities[i].modelIndex];
-            Mesh& mesh = app->meshes[model.meshIdx];
+            ModelStruct& model = app->models[app->entities[i].modelIndex];
+            MeshStruct& mesh = app->meshes[model.meshIdx];
             glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), app->uniformBuffer.handle, app->entities[i].localParamsOffset, app->entities[i].localParamsSize);
 
             for (u32 i = 0; i < mesh.submeshes.size(); ++i)
@@ -992,7 +1003,7 @@ void RenderDeferredRenderingScene(App* app)
         glUniformMatrix4fv(app->programLightsUniformWorldMatrix, 1, GL_FALSE, (GLfloat*)&worldViewProjectionMatrix);
         glUniform3f(app->programLightsUniformColor, app->lights[i].color.x, app->lights[i].color.y, app->lights[i].color.z);
 
-        Mesh& mesh = app->meshes[app->models[modelIndex].meshIdx];
+        MeshStruct& mesh = app->meshes[app->models[modelIndex].meshIdx];
         GLuint vao = FindVAO(mesh, 0, lightsShader);
         glBindVertexArray(vao);
 
@@ -1024,6 +1035,38 @@ void RenderDeferredRenderingScene(App* app)
 
     glBindTexture(GL_TEXTURE_2D, 0);
     glUseProgram(0);
+}
+
+void RenderForwardRenderingScene(App* app)
+{
+    if (app->enableDebugGroup)
+    {
+        glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "RenderForwardRenderingScene");
+    }
+
+    glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    app->landscape.shader.Activate();
+
+    // view/projection transformations
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)app->displaySize.x / (float)app->displaySize.y, 0.1f, 100.0f);
+    glm::mat4 view = app->camera.viewMatrix;
+    app->landscape.shader.setMat4("projection", projection);
+    app->landscape.shader.setMat4("view", view);
+
+    // render the loaded model
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
+    app->landscape.shader.setMat4("model", model);
+
+    app->landscape.model.Draw(app->landscape.shader);
+
+    if (app->enableDebugGroup)
+    {
+        glPopDebugGroup();
+    }
 }
 
 u32 loadTexture(char const* path)
