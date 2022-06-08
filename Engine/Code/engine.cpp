@@ -292,6 +292,7 @@ void Init(App* app)
     app->camera.viewMatrix = glm::lookAt(app->camera.position, app->camera.target, glm::vec3(0.0f, 1.0f, 0.0f));
     
     app->renderWater = true;
+    app->relief = true;
 }
 
 void InitModelsAndLights(App* app)
@@ -326,12 +327,12 @@ void InitModelsAndLights(App* app)
     SetAttributes(texturedMeshProgram);
 
     // Init models
-    /*u32 patrickTexIdx = LoadModel(app, "Models/Patrick/Patrick.obj");
-    app->planeId = LoadModel(app, "Models/Plane/plane.obj");
-    app->sphereId = LoadModel(app, "Models/Sphere/sphere.obj");
-    u32 cyborgId = LoadModel(app, "Models/Cyborg/cyborg.obj");
-    u32 planetMarsId = LoadModel(app, "Models/Planet/Mars/mars.obj");
-    u32 woodenCartId = LoadModel(app, "Models/WoodenCart/cart_OBJ.obj");*/
+    //u32 patrickTexIdx = LoadModel(app, "Models/Patrick/Patrick.obj");
+    //app->planeId = LoadModel(app, "Models/Plane/plane.obj");
+    //app->sphereId = LoadModel(app, "Models/Sphere/sphere.obj");
+    //u32 cyborgId = LoadModel(app, "Models/Cyborg/cyborg.obj");
+    //u32 planetMarsId = LoadModel(app, "Models/Planet/Mars/mars.obj");
+    u32 woodenCartId = LoadModel(app, "Models/WoodenCart/cart_OBJ.obj");
 
     // Gameobjects - Entities and lights
     {
@@ -359,10 +360,10 @@ void InitModelsAndLights(App* app)
         };
 
         //InitEntitiesInBulk(app, groundPos, app->planeId, 1.0f);
-        /*InitEntitiesInBulk(app, patricksPos, patrickTexIdx, 1.0f);
-        InitEntitiesInBulk(app, cyborgsPos, cyborgId, 2.0f);
-        InitEntitiesInBulk(app, marsPos, planetMarsId, 37.5f);
-        InitEntitiesInBulk(app, woodenCartPos, woodenCartId, 3.0f);*/
+        //InitEntitiesInBulk(app, patricksPos, patrickTexIdx, 1.0f);
+        //InitEntitiesInBulk(app, cyborgsPos, cyborgId, 2.0f);
+        //InitEntitiesInBulk(app, marsPos, planetMarsId, 37.5f);
+        InitEntitiesInBulk(app, woodenCartPos, woodenCartId, 3.0f);
     }
 
     // Add lights
@@ -500,7 +501,10 @@ void Gui(App* app)
     ImGui::Separator();
     ImGui::Checkbox("Enable debug groups", &app->enableDebugGroup);
     ImGui::Separator();
-    ImGui::Checkbox("Enable Water Rendering", &app->renderWater);
+    ImGui::Checkbox("ReliefMapping", &app->relief);
+    ImGui::SameLine();
+    ImGui::Text("Bump Strength");
+    ImGui::DragFloat("##bumpStrengh", &app->bumpStrength, 0.01f, 0.0, 1.0f);
 
     ImGui::End();
 }
@@ -562,6 +566,11 @@ void Render(App* app)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport(0, 0, app->displaySize.x, app->displaySize.y);
         glEnable(GL_DEPTH_TEST);
+    }
+
+    //Relief mapping activated
+    if (app->relief) {
+        //RenderRelief();
     }
 
     //Water rendering if enabled
@@ -934,6 +943,13 @@ void RenderDeferredRenderingScene(App* app)
 
                 u32 subMeshMaterialIdx = model.materialIdx[i];
                 Material& submeshMaterial = app->materials[subMeshMaterialIdx];
+
+                glUniform1f(glGetUniformLocation(texturedMeshProgram.handle, "hasNormalMap"), (float)submeshMaterial.normalsTextureIdx);
+                glUniform1f(glGetUniformLocation(texturedMeshProgram.handle, "hasReliefMap"), (float)submeshMaterial.bumpTextureIdx);
+
+                GLuint Relief = app->relief == true ? 1 : 0;
+                glUniform1f(glGetUniformLocation(texturedMeshProgram.handle, "Relief"), (float)Relief);
+                glUniform1f(glGetUniformLocation(texturedMeshProgram.handle, "Bumpiness"), app->bumpStrength);
 
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);

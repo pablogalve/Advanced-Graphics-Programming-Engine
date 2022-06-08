@@ -286,6 +286,10 @@ struct App
     //Skybox Shader
     Skybox skybox;
 
+    //Relief Mapping
+    bool relief;
+    float bumpStrength;
+
     //Water Shader
     GLuint fboReflection;
     GLuint fboRefraction;
